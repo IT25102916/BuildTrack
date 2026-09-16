@@ -24,6 +24,7 @@
                 <li><a href="#" id="nav-team" class="nav-link"><i class="fa-solid fa-users"></i> Team</a></li>
                 <li><a href="#" id="nav-documents" class="nav-link"><i class="fa-solid fa-file-contract"></i> Documents</a></li>
                 <li><a href="#" id="nav-contractors" class="nav-link"><i class="fa-solid fa-truck"></i> Contractors</a></li>
+                <li class="role-restricted role-finance_executive"><a href="#" id="nav-finance" class="nav-link"><i class="fa-solid fa-money-bill"></i> Finance</a></li>
                 <li><a href="#" id="nav-reports" class="nav-link"><i class="fa-solid fa-file-csv"></i> Reports</a></li>
                 <li><a href="#" id="nav-analytics" class="nav-link"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
                 <li><a href="#" id="nav-settings" class="nav-link"><i class="fa-solid fa-gear"></i> Settings</a></li>
@@ -283,6 +284,101 @@
                         </div>
                     </div>
                 </div> <!-- End Analytics View -->
+
+                <!-- ================= Finance Section ================= -->
+                <section id="finance-section" class="view-section hidden">
+                    <header class="section-header">
+                        <h2>Finance Dashboard</h2>
+                        <div class="actions">
+                            <button class="btn btn-secondary" onclick="window.open('/api/reports/financial', '_blank')"><i class="fa-solid fa-download"></i> Download Report</button>
+                        </div>
+                    </header>
+
+                    <div class="tab-container">
+                        <button class="tab-btn active" id="btn-finance-budgets">Budgets & Alerts</button>
+                        <button class="tab-btn" id="btn-finance-invoices">Invoices</button>
+                        <button class="tab-btn" id="btn-finance-transactions">Ledger (Expenses)</button>
+                        <button class="tab-btn" id="btn-finance-payroll">Payroll</button>
+                    </div>
+
+                    <!-- Budgets -->
+                    <div id="finance-budgets-view" class="card mt-md">
+                        <h3>Budget vs Actuals</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Project ID</th>
+                                    <th>Cost Code</th>
+                                    <th>Description</th>
+                                    <th>Budgeted</th>
+                                    <th>Actual</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finance-budgets-body">
+                                <!-- populated by js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Invoices -->
+                    <div id="finance-invoices-view" class="card mt-md hidden">
+                        <h3>Supplier Invoices</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Project ID</th>
+                                    <th>Amount</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finance-invoices-body">
+                                <!-- populated by js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Transactions -->
+                    <div id="finance-transactions-view" class="card mt-md hidden">
+                        <h3>Financial Ledger</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finance-transactions-body">
+                                <!-- populated by js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Payroll -->
+                    <div id="finance-payroll-view" class="card mt-md hidden">
+                        <h3>Payroll Payments</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Date</th>
+                                    <th>Project ID</th>
+                                    <th>Amount</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finance-payroll-body">
+                                <!-- populated by js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
 
                 <!-- ── Settings View ── -->
                 <div id="view-settings" class="view-section hidden">

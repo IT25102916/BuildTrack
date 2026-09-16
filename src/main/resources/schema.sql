@@ -262,3 +262,26 @@ CREATE TABLE attendance (
       status           NVARCHAR(50)    NOT NULL DEFAULT 'Present',
       UNIQUE(user_id, work_date)
 );
+CREATE TABLE invoices (
+      id               BIGINT          IDENTITY(1,1) PRIMARY KEY,
+      project_id       BIGINT          NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      supplier_id      BIGINT          NULL REFERENCES suppliers(id),
+      invoice_number   NVARCHAR(100)   NOT NULL,
+      amount           DECIMAL(18,2)   NOT NULL DEFAULT 0,
+      due_date         DATE            NOT NULL,
+      status           NVARCHAR(50)    NOT NULL DEFAULT 'Pending',
+      created_at       DATETIME2       NOT NULL DEFAULT GETDATE()
+);
+
+CREATE TABLE transactions (
+      id               BIGINT          IDENTITY(1,1) PRIMARY KEY,
+      project_id       BIGINT          NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      type             NVARCHAR(50)    NOT NULL DEFAULT 'Expense',
+      category         NVARCHAR(100)   NOT NULL,
+      amount           DECIMAL(18,2)   NOT NULL DEFAULT 0,
+      transaction_date DATE            NOT NULL,
+      description      NVARCHAR(500)   NULL,
+      reference_id     BIGINT          NULL,
+      created_at       DATETIME2       NOT NULL DEFAULT GETDATE()
+);
+
