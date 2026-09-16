@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewFinancePayroll = document.getElementById('finance-payroll-view');
 
     function switchFinanceTab(tab) {
-        document.querySelectorAll('#finance-section .tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('#finance-section .tabs button').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('#finance-section .card').forEach(view => view.classList.add('hidden'));
 
         if (tab === 'budgets') {

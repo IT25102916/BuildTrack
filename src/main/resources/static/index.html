@@ -286,19 +286,22 @@
                 </div> <!-- End Analytics View -->
 
                 <!-- ================= Finance Section ================= -->
-                <section id="finance-section" class="view-section hidden">
-                    <header class="section-header">
-                        <h2>Finance Dashboard</h2>
-                        <div class="actions">
-                            <button class="btn btn-secondary" onclick="window.open('/api/reports/financial', '_blank')"><i class="fa-solid fa-download"></i> Download Report</button>
+                <div id="finance-section" class="view-section hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Finance Dashboard</h1>
+                            <p class="page-subtitle">Track project budgets, invoices, and expenses</p>
                         </div>
-                    </header>
+                        <button class="btn btn-secondary" onclick="window.open('/api/reports/financial', '_blank')">
+                            <i class="fa-solid fa-download"></i> Download Report
+                        </button>
+                    </div>
 
-                    <div class="tab-container">
-                        <button class="tab-btn active" id="btn-finance-budgets">Budgets & Alerts</button>
-                        <button class="tab-btn" id="btn-finance-invoices">Invoices</button>
-                        <button class="tab-btn" id="btn-finance-transactions">Ledger (Expenses)</button>
-                        <button class="tab-btn" id="btn-finance-payroll">Payroll</button>
+                    <div class="tabs" style="margin-bottom: 20px;">
+                        <button class="btn btn-secondary active" id="btn-finance-budgets">Budgets & Alerts</button>
+                        <button class="btn btn-secondary" id="btn-finance-invoices">Invoices</button>
+                        <button class="btn btn-secondary" id="btn-finance-transactions">Ledger (Expenses)</button>
+                        <button class="btn btn-secondary" id="btn-finance-payroll">Payroll</button>
                     </div>
 
                     <!-- Budgets -->
@@ -378,7 +381,7 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
 
                 <!-- ── Settings View ── -->
                 <div id="view-settings" class="view-section hidden">
