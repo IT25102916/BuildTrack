@@ -44,7 +44,12 @@ public class ProcurementController {
         return ResponseEntity.noContent().build();
     }
 
-    // ── Purchase Orders ───────────────────────────────────
+    // ── Purchase Orders ──────────────────────────────────────────────────
+
+    @GetMapping("/purchase-orders")
+    public List<PurchaseOrder> getAllPOs() {
+        return purchaseOrderRepository.findAll();
+    }
 
     @GetMapping("/api/purchase-orders/project/{projectId}")
     public List<PurchaseOrder> getPOs(@PathVariable Long projectId) {

@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const navReports = document.getElementById('nav-reports');
     const navSettings = document.getElementById('nav-settings');
     const navFinance = document.getElementById('nav-finance');
+    const navInventory = document.getElementById('nav-inventory');
     
     const viewDashboard = document.getElementById('view-dashboard');
     const viewProjects = document.getElementById('view-projects');
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewReports = document.getElementById('view-reports');
     const viewSettings = document.getElementById('view-settings');
     const viewFinance = document.getElementById('finance-section');
+    const viewInventory = document.getElementById('view-inventory');
 
     // ── Dashboard Elements ──
     const dashboardContent = document.getElementById('dashboard-content');
@@ -190,6 +192,48 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size:14px; color:var(--text-secondary);">Within approved budget</div>
                 </div>
             `;
+        } else if (role === 'finance executive' || role === 'finance') {
+            dashboardContent.innerHTML = `
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary); margin-right:8px;"></i> Pending Invoices</h3>
+                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-pending-invoices">–</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Awaiting approval</div>
+                </div>
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-money-bill-trend-up" style="color:#10b981; margin-right:8px;"></i> Total Transactions</h3>
+                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-total-tx">–</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Recorded this month</div>
+                </div>
+            `;
+        } else if (role === 'inventory supervisor' || role === 'store and inventory supervisor') {
+            dashboardContent.innerHTML = `
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-boxes-stacked" style="color:var(--brand-primary); margin-right:8px;"></i> Total Items</h3>
+                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-inv-total">–</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Inventory items tracked</div>
+                </div>
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; margin-right:8px;"></i> Low Stock</h3>
+                    <div style="font-size:32px; font-weight:700; color:#ef4444;" id="dash-inv-low">–</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Items below reorder level</div>
+                </div>
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-truck-ramp-box" style="color:#f59e0b; margin-right:8px;"></i> Pending Orders</h3>
+                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-inv-orders">–</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Purchase orders in transit</div>
+                </div>
+            `;
+            // Load real data for inventory dashboard
+            api.get('/inventory/items').then(items => {
+                document.getElementById('dash-inv-total').textContent = items.length;
+            }).catch(() => {});
+            api.get('/inventory/low-stock').then(items => {
+                document.getElementById('dash-inv-low').textContent = items.length;
+            }).catch(() => {});
+            api.get('/procurement/purchase-orders').then(pos => {
+                const pending = pos.filter(p => p.status === 'ordered').length;
+                document.getElementById('dash-inv-orders').textContent = pending;
+            }).catch(() => {});
         } else {
             // Fallback Dashboard
             dashboardContent.innerHTML = `
@@ -212,6 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navReports.addEventListener('click', (e) => { e.preventDefault(); switchView('reports'); });
     navSettings.addEventListener('click', (e) => { e.preventDefault(); switchView('settings'); renderSettings(); });
     navFinance.addEventListener('click', (e) => { e.preventDefault(); switchView('finance'); loadFinanceData(); });
+    navInventory.addEventListener('click', (e) => { e.preventDefault(); switchView('inventory'); loadInventoryData(); });
 
     const placeholderLinks = document.querySelectorAll('.nav-links a:not(.nav-link), .user-profile > div:not([style]), .avatar');
     placeholderLinks.forEach(link => {
@@ -253,6 +298,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (viewName === 'finance') {
             navFinance.parentElement.classList.add('active');
             viewFinance.classList.remove('hidden');
+        } else if (viewName === 'inventory') {
+            navInventory.parentElement.classList.add('active');
+            viewInventory.classList.remove('hidden');
         }
     }
 
@@ -385,6 +433,286 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Error', 'Could not approve invoice', 'error');
         }
     };
+
+    // ────────────────────────────────────────────────────────────────────
+    // 🗃️ INVENTORY MODULE
+    // ────────────────────────────────────────────────────────────────────
+    let inventoryItems = [];  // cache for selects
+
+    const btnAddItem        = document.getElementById('btn-add-item');
+    const btnInvStock       = document.getElementById('btn-inv-stock');
+    const btnInvReceive     = document.getElementById('btn-inv-receive');
+    const btnInvIssue       = document.getElementById('btn-inv-issue');
+    const btnInvOrders      = document.getElementById('btn-inv-orders');
+    const btnInvLedger      = document.getElementById('btn-inv-ledger');
+
+    const invStockView      = document.getElementById('inv-stock-view');
+    const invReceiveView    = document.getElementById('inv-receive-view');
+    const invIssueView      = document.getElementById('inv-issue-view');
+    const invOrdersView     = document.getElementById('inv-orders-view');
+    const invLedgerView     = document.getElementById('inv-ledger-view');
+
+    const invItemModal      = document.getElementById('inv-item-modal');
+    const invItemForm       = document.getElementById('inv-item-form');
+    const receiveForm       = document.getElementById('receive-form');
+    const issueForm         = document.getElementById('issue-form');
+
+    function switchInvTab(tab) {
+        document.querySelectorAll('#view-inventory .tabs button').forEach(b => b.classList.remove('active'));
+        [invStockView, invReceiveView, invIssueView, invOrdersView, invLedgerView].forEach(v => v.classList.add('hidden'));
+
+        if (tab === 'stock')    { btnInvStock.classList.add('active');    invStockView.classList.remove('hidden');    loadStockLevels(); }
+        if (tab === 'receive')  { btnInvReceive.classList.add('active');  invReceiveView.classList.remove('hidden');  populateItemSelects(); }
+        if (tab === 'issue')    { btnInvIssue.classList.add('active');    invIssueView.classList.remove('hidden');    populateItemSelects(); populateProjectSelect(); }
+        if (tab === 'orders')   { btnInvOrders.classList.add('active');   invOrdersView.classList.remove('hidden');   loadPurchaseOrders(); }
+        if (tab === 'ledger')   { btnInvLedger.classList.add('active');   invLedgerView.classList.remove('hidden');   loadMovementLedger(); }
+    }
+
+    btnInvStock.addEventListener('click',   () => switchInvTab('stock'));
+    btnInvReceive.addEventListener('click', () => switchInvTab('receive'));
+    btnInvIssue.addEventListener('click',   () => switchInvTab('issue'));
+    btnInvOrders.addEventListener('click',  () => switchInvTab('orders'));
+    btnInvLedger.addEventListener('click',  () => switchInvTab('ledger'));
+
+    // Open Add-Item modal
+    btnAddItem.addEventListener('click', () => {
+        document.getElementById('inv-modal-title').textContent = 'Add Inventory Item';
+        document.getElementById('inv-item-id').value = '';
+        invItemForm.reset();
+        invItemModal.classList.remove('hidden');
+    });
+    document.getElementById('btn-close-inv-modal').addEventListener('click', () => invItemModal.classList.add('hidden'));
+    document.getElementById('btn-cancel-inv-modal').addEventListener('click', () => invItemModal.classList.add('hidden'));
+    invItemModal.addEventListener('click', (e) => { if (e.target === invItemModal) invItemModal.classList.add('hidden'); });
+
+    invItemForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('inv-item-id').value;
+        const payload = {
+            name:         document.getElementById('inv-item-name').value,
+            category:     document.getElementById('inv-item-category').value,
+            unit:         document.getElementById('inv-item-unit').value,
+            reorderLevel: parseFloat(document.getElementById('inv-item-reorder').value) || 0,
+            unitCost:     parseFloat(document.getElementById('inv-item-cost').value) || 0,
+            description:  document.getElementById('inv-item-desc').value,
+        };
+        try {
+            if (id) {
+                await api.put('/inventory/items/' + id, payload);
+                showToast('Success', 'Item updated', 'success');
+            } else {
+                await api.post('/inventory/items', payload);
+                showToast('Success', 'Item added to inventory', 'success');
+            }
+            invItemModal.classList.add('hidden');
+            loadStockLevels();
+        } catch (err) {
+            showToast('Error', err.message, 'error');
+        }
+    });
+
+    async function loadInventoryData() {
+        switchInvTab('stock');
+    }
+
+    async function loadStockLevels() {
+        const tbody = document.getElementById('inv-stock-body');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Loading...</td></tr>';
+        try {
+            inventoryItems = await api.get('/inventory/items');
+            const lowStock = inventoryItems.filter(i =>
+                parseFloat(i.reorderLevel) > 0 && parseFloat(i.quantityOnHand) <= parseFloat(i.reorderLevel)
+            );
+
+            const badge = document.getElementById('inv-low-stock-badge');
+            const cnt   = document.getElementById('inv-low-stock-count');
+            if (lowStock.length > 0) {
+                badge.classList.remove('hidden');
+                cnt.textContent = lowStock.length;
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            tbody.innerHTML = '';
+            if (inventoryItems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-secondary);">No items. Click "Add Item" to get started.</td></tr>';
+                return;
+            }
+            inventoryItems.forEach(item => {
+                const isLow = parseFloat(item.reorderLevel) > 0 && parseFloat(item.quantityOnHand) <= parseFloat(item.reorderLevel);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600">${item.name}</td>
+                    <td>${item.category || '–'}</td>
+                    <td>${item.unit}</td>
+                    <td style="font-weight:700; color:${isLow ? '#ef4444' : 'var(--text-main)'}">${parseFloat(item.quantityOnHand).toFixed(2)}</td>
+                    <td>${parseFloat(item.reorderLevel).toFixed(2)}</td>
+                    <td>$${parseFloat(item.unitCost).toFixed(2)}</td>
+                    <td>${isLow
+                        ? '<span style="background:#fef2f2; color:#ef4444; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock</span>'
+                        : '<span style="background:#f0fdf4; color:#16a34a; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">OK</span>'}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="window.editInvItem(${item.id})"><i class="fa-solid fa-pen"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#ef4444;">Failed to load inventory</td></tr>';
+        }
+    }
+
+    window.editInvItem = function(id) {
+        const item = inventoryItems.find(i => i.id === id);
+        if (!item) return;
+        document.getElementById('inv-modal-title').textContent = 'Edit Inventory Item';
+        document.getElementById('inv-item-id').value = item.id;
+        document.getElementById('inv-item-name').value = item.name;
+        document.getElementById('inv-item-category').value = item.category || '';
+        document.getElementById('inv-item-unit').value = item.unit;
+        document.getElementById('inv-item-reorder').value = item.reorderLevel;
+        document.getElementById('inv-item-cost').value = item.unitCost;
+        document.getElementById('inv-item-desc').value = item.description || '';
+        invItemModal.classList.remove('hidden');
+    };
+
+    function populateItemSelects() {
+        ['receive-item-id', 'issue-item-id'].forEach(selId => {
+            const sel = document.getElementById(selId);
+            sel.innerHTML = '<option value="">-- Select Item --</option>';
+            inventoryItems.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = `${item.name} (${parseFloat(item.quantityOnHand).toFixed(2)} ${item.unit})`;
+                sel.appendChild(opt);
+            });
+        });
+        if (inventoryItems.length === 0) {
+            loadStockLevels().then(populateItemSelects);
+        }
+    }
+
+    async function populateProjectSelect() {
+        const sel = document.getElementById('issue-project-id');
+        sel.innerHTML = '<option value="">-- Select Project --</option>';
+        try {
+            const projs = await api.get('/projects');
+            projs.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
+            });
+        } catch (err) { console.error('Could not load projects', err); }
+    }
+
+    receiveForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const itemId = document.getElementById('receive-item-id').value;
+        const qty    = document.getElementById('receive-qty').value;
+        const notes  = document.getElementById('receive-notes').value;
+        if (!itemId) return showToast('Error', 'Please select an item', 'error');
+        try {
+            await api.post(`/inventory/items/${itemId}/receive`, {
+                quantity: parseFloat(qty),
+                notes,
+                performedByUserId: currentUser.id,
+                performedByName:   currentUser.name
+            });
+            showToast('Success', 'Stock received and updated', 'success');
+            receiveForm.reset();
+            inventoryItems = await api.get('/inventory/items');
+            populateItemSelects();
+        } catch (err) {
+            showToast('Error', err.message || 'Failed to receive stock', 'error');
+        }
+    });
+
+    issueForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const itemId    = document.getElementById('issue-item-id').value;
+        const projectId = document.getElementById('issue-project-id').value;
+        const qty       = document.getElementById('issue-qty').value;
+        const notes     = document.getElementById('issue-notes').value;
+        if (!itemId) return showToast('Error', 'Please select an item', 'error');
+        if (!projectId) return showToast('Error', 'Please select a project', 'error');
+        try {
+            await api.post(`/inventory/items/${itemId}/issue`, {
+                quantity: parseFloat(qty),
+                projectId: parseInt(projectId),
+                notes,
+                performedByUserId: currentUser.id,
+                performedByName:   currentUser.name
+            });
+            showToast('Success', 'Materials issued successfully', 'success');
+            issueForm.reset();
+            inventoryItems = await api.get('/inventory/items');
+            populateItemSelects();
+        } catch (err) {
+            showToast('Error', err.message || 'Insufficient stock', 'error');
+        }
+    });
+
+    async function loadPurchaseOrders() {
+        const tbody = document.getElementById('inv-orders-body');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Loading...</td></tr>';
+        try {
+            const pos = await api.get('/procurement/purchase-orders');
+            tbody.innerHTML = '';
+            if (pos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">No purchase orders yet.</td></tr>';
+                return;
+            }
+            pos.forEach(po => {
+                const isDelayed = po.expectedDeliveryDate && !po.actualDeliveryDate && new Date(po.expectedDeliveryDate) < new Date();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${po.description}</td>
+                    <td>${po.supplierName || '–'}</td>
+                    <td>$${parseFloat(po.amount).toFixed(2)}</td>
+                    <td>${po.orderDate}</td>
+                    <td style="color:${isDelayed ? '#ef4444' : 'inherit'}">${po.expectedDeliveryDate || '–'}${isDelayed ? ' <i class="fa-solid fa-triangle-exclamation" title="Delayed"></i>' : ''}</td>
+                    <td><span style="background:${po.status==='delivered'?'#f0fdf4':'#fffbeb'}; color:${po.status==='delivered'?'#16a34a':'#b45309'}; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">${po.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ef4444;">Failed to load orders</td></tr>';
+        }
+    }
+
+    async function loadMovementLedger() {
+        const tbody = document.getElementById('inv-ledger-body');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Loading...</td></tr>';
+        try {
+            const txs = await api.get('/inventory/transactions');
+            tbody.innerHTML = '';
+            if (txs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">No movements recorded yet.</td></tr>';
+                return;
+            }
+            txs.forEach(tx => {
+                const item = inventoryItems.find(i => i.id === tx.inventoryItemId);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${tx.transactionDate}</td>
+                    <td>${item ? item.name : 'Item #' + tx.inventoryItemId}</td>
+                    <td><span style="background:${tx.type==='RECEIPT'?'#f0fdf4':'#fef2f2'}; color:${tx.type==='RECEIPT'?'#16a34a':'#ef4444'}; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">${tx.type}</span></td>
+                    <td>${parseFloat(tx.quantity).toFixed(2)}</td>
+                    <td>${tx.notes || '–'}</td>
+                    <td>${tx.performedByName || '–'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ef4444;">Failed to load ledger</td></tr>';
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // End Inventory Module
+    // ────────────────────────────────────────────────────────────────────
     
     // 🚀 Project Event Listeners 🚀──
     btnNewProject.addEventListener('click', openNewProjectModal);

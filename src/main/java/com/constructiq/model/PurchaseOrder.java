@@ -43,6 +43,12 @@ public class PurchaseOrder {
     @Column(name = "order_date", nullable = false)
     private LocalDate orderDate = LocalDate.now();
 
+    @Column(name = "expected_delivery_date")
+    private LocalDate expectedDeliveryDate;
+
+    @Column(name = "actual_delivery_date")
+    private LocalDate actualDeliveryDate;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

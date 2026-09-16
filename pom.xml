@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.2.0</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.constructiq</groupId>
 	<artifactId>constructiq</artifactId>
@@ -14,7 +14,8 @@
 	<name>ConstructIQ</name>
 	<description>Construction Management System Backend</description>
 	<properties>
-		<java.version>21</java.version><lombok.version>1.18.34</lombok.version>
+		<java.version>21</java.version>
+		<lombok.version>1.18.36</lombok.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -37,7 +38,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.34</version>
+			<version>${lombok.version}</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -53,13 +54,12 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.11.0</version>
 				<configuration>
-					<source>21</source>
-					<target>21</target>
+					<release>21</release>
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
-							<version>1.18.34</version>
+							<version>${lombok.version}</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
@@ -76,12 +76,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-        </plugins>
+		</plugins>
 	</build>
 </project>
-
-
-
-
-
-

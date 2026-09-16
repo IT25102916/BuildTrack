@@ -37,10 +37,17 @@ public class DatabaseSeeder implements CommandLineRunner {
             fe.setName("Finance Executive");
             fe.setEmail("finance@constructiq.com");
             fe.setRole("Finance Executive");
-            fe.setPasswordHash("finance");
+            fe.setPasswordHash("demo");
             fe.setAvatarInitials("FE");
 
-            userRepository.saveAll(List.of(admin, pm, fe));
+            User inv = new User();
+            inv.setName("Inventory Supervisor");
+            inv.setEmail("inventory@constructiq.com");
+            inv.setRole("Inventory Supervisor");
+            inv.setPasswordHash("demo");
+            inv.setAvatarInitials("IS");
+
+            userRepository.saveAll(List.of(admin, pm, fe, inv));
         }
     }
 }
