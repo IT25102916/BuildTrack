@@ -131,7 +131,7 @@ public class InventoryItem {
         this.supplierId = supplierId;
     }
 
-    public boolean isIsActive() {
+    public boolean isActive() {
         return isActive;
     }
 

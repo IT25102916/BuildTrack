@@ -119,7 +119,7 @@ public class Supplier {
         this.onTimePercent = onTimePercent;
     }
 
-    public boolean isIsActive() {
+    public boolean isActive() {
         return isActive;
     }
 

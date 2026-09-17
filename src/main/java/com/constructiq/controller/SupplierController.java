@@ -36,7 +36,7 @@ public class SupplierController {
             s.setType(updates.getType());
             s.setRating(updates.getRating());
             s.setOnTimePercent(updates.getOnTimePercent());
-            s.setActive(updates.isIsActive());
+            s.setActive(updates.isActive());
             return ResponseEntity.ok(supplierRepository.save(s));
         }).orElse(ResponseEntity.notFound().build());
     }

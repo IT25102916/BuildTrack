@@ -829,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startDate: document.getElementById('startDate').value,
             endDate: document.getElementById('endDate').value || null,
             status: document.getElementById('status').value,
-              type: document.getElementById('projectType').value
+            type: document.getElementById('projectType') ? document.getElementById('projectType').value : 'Commercial'
         };
         try {
             if (id) {
@@ -837,11 +837,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('Success', 'Project updated successfully', 'success');
             } else {
                 const newProj = await api.post('/projects', projectData);
-                  const assignSelect = document.getElementById('projectAssignments');
-                  const assignedUserIds = Array.from(assignSelect.selectedOptions).map(opt => opt.value);
-                  for(const uId of assignedUserIds) {
-                      await api.post(`/projects/${newProj.id}/assignments/${uId}`);
-                  }
+                const assignSelect = document.getElementById('projectAssignments');
+                if (assignSelect) {
+                    const assignedUserIds = Array.from(assignSelect.selectedOptions).map(opt => opt.value);
+                    for(const uId of assignedUserIds) {
+                        await api.post(`/projects/${newProj.id}/assignments/${uId}`);
+                    }
+                }
                 showToast('Success', 'Project created successfully', 'success');
             }
             closeProjectModal();

@@ -106,7 +106,7 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
-    public boolean isIsActive() {
+    public boolean isActive() {
         return isActive;
     }
 
