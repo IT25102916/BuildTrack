@@ -127,15 +127,46 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Hide/Show sidebar links based on role
         const role = currentUser.role.toLowerCase();
-        if (role === 'subcontractor' || role === 'client') {
-            navProjects.parentElement.style.display = 'none';
-            navTeam.parentElement.style.display = 'none';
-            navAnalytics.parentElement.style.display = 'none';
-        } else {
-            navProjects.parentElement.style.display = 'block';
-            navTeam.parentElement.style.display = 'block';
-            navAnalytics.parentElement.style.display = 'block';
+        
+        const allNavs = [navDashboard, navProjects, navTeam, navDocuments, navAnalytics, navContractors, navReports, navSettings, navFinance, navInventory];
+        allNavs.forEach(nav => {
+            if(nav && nav.parentElement) nav.parentElement.style.display = 'none';
+        });
+
+        if(navDashboard) navDashboard.parentElement.style.display = 'block';
+
+        if (role === 'admin') {
+            allNavs.forEach(nav => { if(nav && nav.parentElement) nav.parentElement.style.display = 'block'; });
+        } else if (role === 'pm') {
+            [navProjects, navTeam, navDocuments, navAnalytics, navContractors, navReports, navSettings].forEach(nav => {
+                if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
+            });
+        } else if (role === 'supervisor') {
+            [navProjects, navDocuments, navReports].forEach(nav => {
+                if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
+            });
+        } else if (role === 'subcontractor') {
+            [navDocuments, navReports].forEach(nav => {
+                if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
+            });
+        } else if (role === 'procurement') {
+            [navProjects, navInventory, navContractors, navReports].forEach(nav => {
+                if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
+            });
+        } else if (role === 'finance') {
+            [navProjects, navFinance, navReports, navAnalytics].forEach(nav => {
+                if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
+            });
+        } else if (role === 'client') {
+            [navInventory].forEach(nav => {
+                if(nav && nav.parentElement) {
+                    nav.parentElement.style.display = 'block';
+                    nav.innerHTML = '<i class="fa-solid fa-boxes-stacked"></i> My Materials';
+                }
+            });
         }
+
+        applyRoleRestrictions();
         
         // Default to Dashboard
         switchView('dashboard');
@@ -358,8 +389,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${p.name}</td>
+                    <td>CC-${p.id || 'GEN'}</td>
+                    <td>General Construction</td>
                     <td>$500,000.00</td>
-                    <td>$250,000.00</td>
                     <td>$250,000.00</td>
                     <td><span class="badge badge-success">On Budget</span></td>
                 `;
@@ -402,7 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
             transactions.forEach(tx => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${tx.transactionDate}</td>
+                    <td>${tx.id}</td>
+                    <td>${new Date(tx.transactionDate).toLocaleDateString()}</td>
                     <td>Project ${tx.projectId}</td>
                     <td>${tx.category}</td>
                     <td>$${tx.amount.toFixed(2)}</td>
@@ -479,6 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('inv-modal-title').textContent = 'Add Inventory Item';
         document.getElementById('inv-item-id').value = '';
         invItemForm.reset();
+        populateSupplierSelect();
         invItemModal.classList.remove('hidden');
     });
     document.getElementById('btn-close-inv-modal').addEventListener('click', () => invItemModal.classList.add('hidden'));
@@ -488,12 +522,15 @@ document.addEventListener('DOMContentLoaded', () => {
     invItemForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('inv-item-id').value;
+        const supplierVal = document.getElementById('inv-item-supplier').value;
         const payload = {
             name:         document.getElementById('inv-item-name').value,
             category:     document.getElementById('inv-item-category').value,
             unit:         document.getElementById('inv-item-unit').value,
             reorderLevel: parseFloat(document.getElementById('inv-item-reorder').value) || 0,
             unitCost:     parseFloat(document.getElementById('inv-item-cost').value) || 0,
+            quantityOnHand: parseFloat(document.getElementById('inv-item-qty').value) || 0,
+            supplierId:   supplierVal ? parseInt(supplierVal) : null,
             description:  document.getElementById('inv-item-desc').value,
         };
         try {
@@ -512,7 +549,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function loadInventoryData() {
-        switchInvTab('stock');
+        if (currentUser && currentUser.role.toLowerCase() === 'client') {
+            switchInvTab('ledger');
+        } else {
+            switchInvTab('stock');
+        }
     }
 
     async function loadStockLevels() {
@@ -553,7 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         : '<span style="background:#f0fdf4; color:#16a34a; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">OK</span>'}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-secondary" onclick="window.editInvItem(${item.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-icon" onclick="window.editInvItem(${item.id})" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-icon danger" onclick="window.deleteInvItem(${item.id})" title="Delete"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -573,8 +615,23 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('inv-item-unit').value = item.unit;
         document.getElementById('inv-item-reorder').value = item.reorderLevel;
         document.getElementById('inv-item-cost').value = item.unitCost;
+        document.getElementById('inv-item-qty').value = item.quantityOnHand || 0;
         document.getElementById('inv-item-desc').value = item.description || '';
+        populateSupplierSelect().then(() => {
+            document.getElementById('inv-item-supplier').value = item.supplierId || '';
+        });
         invItemModal.classList.remove('hidden');
+    };
+
+    window.deleteInvItem = async function(id) {
+        if (!confirm('Are you sure you want to delete this inventory item?')) return;
+        try {
+            await api.delete('/inventory/items/' + id);
+            showToast('Success', 'Item deleted successfully', 'success');
+            loadStockLevels();
+        } catch (error) {
+            showToast('Delete Failed', error.message, 'error');
+        }
     };
 
     function populateItemSelects() {
@@ -590,6 +647,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (inventoryItems.length === 0) {
             loadStockLevels().then(populateItemSelects);
+        }
+    }
+
+    async function populateSupplierSelect() {
+        const sel = document.getElementById('inv-item-supplier');
+        // Do not repopulate if we already have suppliers loaded, unless empty
+        if (sel.options.length > 1) return; 
+        
+        sel.innerHTML = '<option value="">-- No Supplier --</option>';
+        try {
+            const suppliers = await api.get('/suppliers');
+            suppliers.forEach(sup => {
+                const opt = document.createElement('option');
+                opt.value = sup.id;
+                opt.textContent = sup.name;
+                sel.appendChild(opt);
+            });
+        } catch (error) {
+            console.error('Failed to load suppliers:', error);
         }
     }
 
@@ -686,7 +762,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.getElementById('inv-ledger-body');
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Loading...</td></tr>';
         try {
-            const txs = await api.get('/inventory/transactions');
+            let txs;
+            if (currentUser && currentUser.role.toLowerCase() === 'client') {
+                txs = await api.get('/inventory/issued-to-me');
+            } else {
+                txs = await api.get('/inventory/transactions');
+            }
             tbody.innerHTML = '';
             if (txs.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">No movements recorded yet.</td></tr>';
@@ -893,17 +974,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 tr.innerHTML = `
                     <td>
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: var(--accent-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
                                 ${user.avatarInitials}
                             </div>
                             <div style="font-weight: 600;">${user.name}</div>
                         </div>
                     </td>
                     <td>${user.role}</td>
-                    <td>
-                        <div>${user.email}</div>
-                        <div style="font-size: 12px; color: var(--text-secondary)">${user.phone || 'No phone'}</div>
-                    </td>
+                    <td>${user.email}</td>
+                    <td>${user.phone || 'N/A'}</td>
+                    <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
                     <td>
                         <span class="status-badge status-${user.active ? 'active' : 'inactive'}">
                             ${user.active ? 'Active' : 'Inactive'}
@@ -1243,6 +1323,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    // Make all data-tables horizontally scrollable to prevent overlapping
+    function makeTablesResponsive() {
+        document.querySelectorAll('table.data-table').forEach(table => {
+            if (!table.parentElement.classList.contains('table-responsive')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-responsive';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            }
+        });
+    }
+    makeTablesResponsive();
+
+    function applyRoleRestrictions() {
+        const role = currentUser.role.toLowerCase();
+        
+        // Inventory View Restrictions
+        const btnNewInventoryItem = document.getElementById('btn-new-item');
+        
+        if (role === 'client') {
+            if (btnNewInventoryItem) btnNewInventoryItem.style.display = 'none';
+            const tabContainer = document.querySelector('.tabs');
+            if (tabContainer) tabContainer.style.display = 'none';
+        } else if (role !== 'admin' && role !== 'procurement') {
+            if (btnNewInventoryItem) btnNewInventoryItem.style.display = 'none';
         }
     }
 

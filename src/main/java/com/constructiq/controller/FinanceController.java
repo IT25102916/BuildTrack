@@ -9,10 +9,12 @@ import com.constructiq.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.constructiq.security.RequireRole;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/finance")
+@RequireRole({"finance", "admin"})
 @SuppressWarnings("null")
 public class FinanceController {
 

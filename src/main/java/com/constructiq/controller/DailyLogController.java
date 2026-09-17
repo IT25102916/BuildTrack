@@ -8,8 +8,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.constructiq.security.RequireRole;
+
 @RestController
 @RequestMapping("/api/daily-logs")
+@RequireRole({"supervisor", "pm", "admin"})
 @SuppressWarnings("null")
 public class DailyLogController {
 

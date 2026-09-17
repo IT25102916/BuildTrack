@@ -353,6 +353,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Date</th>
+                                    <th>Project</th>
                                     <th>Category</th>
                                     <th>Amount</th>
                                     <th>Description</th>
@@ -566,6 +567,16 @@
                                         <input type="number" id="inv-item-cost" min="0" step="0.01" value="0" placeholder="0.00">
                                     </div>
                                     <div class="form-group">
+                                        <label>Quantity on Hand</label>
+                                        <input type="number" id="inv-item-qty" min="0" step="0.01" value="0" placeholder="0.00">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Supplier</label>
+                                        <select id="inv-item-supplier">
+                                            <option value="">-- No Supplier --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="grid-column: 1 / -1;">
                                         <label>Description</label>
                                         <input type="text" id="inv-item-desc" placeholder="Optional description">
                                     </div>
@@ -760,6 +771,29 @@
                     <span id="login-btn-text">Sign In</span>
                     <i id="login-spinner" class="fa-solid fa-spinner fa-spin hidden"></i>
                 </button>
+                <div style="margin-top: 20px; text-align: center; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">Demo Accounts</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='admin@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            Admin
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='pm@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            PM
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='supervisor@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            Supervisor
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='finance@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            Finance
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='procurement@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            Procurement
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='client@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            Client
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>

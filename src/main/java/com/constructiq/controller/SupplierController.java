@@ -9,9 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/suppliers")
+@RequireRole({"procurement", "pm", "admin"})
 @SuppressWarnings("null")
 public class SupplierController {
 

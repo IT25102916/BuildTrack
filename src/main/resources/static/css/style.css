@@ -271,6 +271,7 @@ body {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     overflow: hidden;
+    padding: 24px;
 }
 
 .data-table {
@@ -279,9 +280,19 @@ body {
 }
 
 .data-table th, .data-table td {
-    padding: 16px 24px;
+    padding: 12px 16px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+}
+
+.data-table td {
+    word-break: break-word;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .data-table th {
@@ -379,7 +390,7 @@ body {
 }
 .close-btn:hover { color: var(--text-primary); }
 
-#project-form { padding: 24px; }
+.modal-content form { padding: 24px; }
 
 .form-group { margin-bottom: 20px; }
 .form-row { display: flex; gap: 16px; }
@@ -423,7 +434,32 @@ input:focus, select:focus {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    margin-top: 32px;
+    margin-top: auto;
+}
+
+.tabs {
+    display: inline-flex;
+    background-color: var(--bg-main);
+    padding: 4px;
+    border-radius: var(--radius-md);
+    gap: 4px;
+    border: 1px solid var(--border-color);
+}
+.tabs .btn {
+    background-color: transparent;
+    border: none;
+    color: var(--text-secondary);
+    box-shadow: none;
+    padding: 8px 16px;
+}
+.tabs .btn:hover {
+    background-color: rgba(255,255,255,0.05);
+    color: var(--text-main);
+}
+.tabs .btn.active {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+    box-shadow: var(--shadow-sm);
 }
 
 /* ── Toasts (Error Handling) ── */

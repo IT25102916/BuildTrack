@@ -10,9 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.constructiq.security.RequireRole;
+import com.constructiq.repository.ProjectRepository;
+import com.constructiq.model.Project;
+import jakarta.servlet.http.HttpSession;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -22,6 +28,7 @@ public class InventoryController {
     @Autowired private InventoryItemRepository itemRepo;
     @Autowired private InventoryTransactionRepository txRepo;
     @Autowired private SupplierRepository supplierRepo;
+    @Autowired private ProjectRepository projectRepo;
 
     // ── Items ──────────────────────────────────────────────────────────────
 
@@ -31,11 +38,13 @@ public class InventoryController {
     }
 
     @PostMapping("/items")
+    @RequireRole({"procurement", "admin"})
     public InventoryItem createItem(@RequestBody InventoryItem item) {
         return itemRepo.save(item);
     }
 
     @PutMapping("/items/{id}")
+    @RequireRole({"procurement", "admin"})
     public ResponseEntity<InventoryItem> updateItem(@PathVariable Long id, @RequestBody InventoryItem updates) {
         return itemRepo.findById(id).map(item -> {
             item.setName(updates.getName());
@@ -50,6 +59,7 @@ public class InventoryController {
     }
 
     @DeleteMapping("/items/{id}")
+    @RequireRole({"procurement", "admin"})
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
         return itemRepo.findById(id).map(item -> {
             item.setActive(false);
@@ -58,9 +68,26 @@ public class InventoryController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/issued-to-me")
+    @RequireRole({"client", "admin"})
+    public ResponseEntity<List<InventoryTransaction>> getIssuedItemsForClient(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        List<Project> clientProjects = projectRepo.findByClientId(userId);
+        if (clientProjects.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        List<Long> projectIds = clientProjects.stream().map(Project::getId).collect(Collectors.toList());
+        List<InventoryTransaction> transactions = txRepo.findByProjectIdInAndType(projectIds, "ISSUE");
+        return ResponseEntity.ok(transactions);
+    }
+
     // ── Receive Stock ──────────────────────────────────────────────────────
 
     @PostMapping("/items/{id}/receive")
+    @RequireRole({"procurement", "admin"})
     public ResponseEntity<?> receiveStock(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         return itemRepo.findById(id).map(item -> {
             BigDecimal qty = new BigDecimal(body.get("quantity").toString());
@@ -93,6 +120,7 @@ public class InventoryController {
     // ── Issue Stock ────────────────────────────────────────────────────────
 
     @PostMapping("/items/{id}/issue")
+    @RequireRole({"procurement", "admin"})
     public ResponseEntity<?> issueStock(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         return itemRepo.findById(id).map(item -> {
             BigDecimal qty = new BigDecimal(body.get("quantity").toString());
@@ -132,6 +160,7 @@ public class InventoryController {
     // ── Transactions / Ledger ──────────────────────────────────────────────
 
     @GetMapping("/transactions")
+    @RequireRole({"procurement", "admin"})
     public List<InventoryTransaction> getAllTransactions() {
         return txRepo.findAllByOrderByCreatedAtDesc();
     }
