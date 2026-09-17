@@ -2,8 +2,10 @@ package com.constructiq.controller;
 
 import com.constructiq.model.MaterialRequest;
 import com.constructiq.model.PurchaseOrder;
+import com.constructiq.model.Quotation;
 import com.constructiq.repository.MaterialRequestRepository;
 import com.constructiq.repository.PurchaseOrderRepository;
+import com.constructiq.repository.QuotationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,18 +19,19 @@ public class ProcurementController {
 
     @Autowired private MaterialRequestRepository materialRequestRepository;
     @Autowired private PurchaseOrderRepository purchaseOrderRepository;
+    @Autowired private QuotationRepository quotationRepository;
 
     // ── Material Requests ─────────────────────────────────
 
-    @GetMapping("/api/material-requests/project/{projectId}")
+    @GetMapping("/material-requests/project/{projectId}")
     public List<MaterialRequest> getMRs(@PathVariable Long projectId) {
         return materialRequestRepository.findByProjectId(projectId);
     }
 
-    @PostMapping("/api/material-requests")
+    @PostMapping("/material-requests")
     public MaterialRequest createMR(@RequestBody MaterialRequest mr) { return materialRequestRepository.save(mr); }
 
-    @PutMapping("/api/material-requests/{id}")
+    @PutMapping("/material-requests/{id}")
     public ResponseEntity<MaterialRequest> updateMR(@PathVariable Long id, @RequestBody MaterialRequest updates) {
         return materialRequestRepository.findById(id).map(mr -> {
             mr.setStatus(updates.getStatus());
@@ -37,7 +40,7 @@ public class ProcurementController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/api/material-requests/{id}")
+    @DeleteMapping("/material-requests/{id}")
     public ResponseEntity<Void> deleteMR(@PathVariable Long id) {
         if (!materialRequestRepository.existsById(id)) return ResponseEntity.notFound().build();
         materialRequestRepository.deleteById(id);
@@ -51,15 +54,15 @@ public class ProcurementController {
         return purchaseOrderRepository.findAll();
     }
 
-    @GetMapping("/api/purchase-orders/project/{projectId}")
+    @GetMapping("/purchase-orders/project/{projectId}")
     public List<PurchaseOrder> getPOs(@PathVariable Long projectId) {
         return purchaseOrderRepository.findByProjectId(projectId);
     }
 
-    @PostMapping("/api/purchase-orders")
+    @PostMapping("/purchase-orders")
     public PurchaseOrder createPO(@RequestBody PurchaseOrder po) { return purchaseOrderRepository.save(po); }
 
-    @PutMapping("/api/purchase-orders/{id}")
+    @PutMapping("/purchase-orders/{id}")
     public ResponseEntity<PurchaseOrder> updatePO(@PathVariable Long id, @RequestBody PurchaseOrder updates) {
         return purchaseOrderRepository.findById(id).map(po -> {
             po.setStatus(updates.getStatus());
@@ -69,10 +72,40 @@ public class ProcurementController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/api/purchase-orders/{id}")
+    @DeleteMapping("/purchase-orders/{id}")
     public ResponseEntity<Void> deletePO(@PathVariable Long id) {
         if (!purchaseOrderRepository.existsById(id)) return ResponseEntity.notFound().build();
         purchaseOrderRepository.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Quotations ───────────────────────────────────────────────────────
+
+    @GetMapping("/quotations/request/{requestId}")
+    public List<Quotation> getQuotationsForRequest(@PathVariable Long requestId) {
+        return quotationRepository.findByMaterialRequestId(requestId);
+    }
+
+    @PostMapping("/quotations")
+    public Quotation createQuotation(@RequestBody Quotation quotation) {
+        return quotationRepository.save(quotation);
+    }
+
+    @PutMapping("/quotations/{id}/accept")
+    public ResponseEntity<Quotation> acceptQuotation(@PathVariable Long id) {
+        return quotationRepository.findById(id).map(acceptedQuote -> {
+            acceptedQuote.setStatus("ACCEPTED");
+            Quotation savedQuote = quotationRepository.save(acceptedQuote);
+
+            // Reject all other quotations for the same material request
+            List<Quotation> otherQuotes = quotationRepository.findByMaterialRequestId(acceptedQuote.getMaterialRequestId());
+            for (Quotation quote : otherQuotes) {
+                if (!quote.getId().equals(id)) {
+                    quote.setStatus("REJECTED");
+                    quotationRepository.save(quote);
+                }
+            }
+            return ResponseEntity.ok(savedQuote);
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

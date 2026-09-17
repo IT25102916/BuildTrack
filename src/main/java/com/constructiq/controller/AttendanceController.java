@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/attendance")
+@SuppressWarnings("null")
 public class AttendanceController {
 
     private final AttendanceRepository attendanceRepository;

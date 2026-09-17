@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/projects/{projectId}/assignments")
+@SuppressWarnings("null")
 public class ProjectAssignmentController {
 
     private final ProjectAssignmentRepository assignmentRepository;

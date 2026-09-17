@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/finance")
+@SuppressWarnings("null")
 public class FinanceController {
 
     @Autowired

@@ -1,16 +1,10 @@
 package com.constructiq.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "attendance")
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -35,4 +29,64 @@ public class Attendance {
 
     @Column(nullable = false)
     private String status;
+
+    public Attendance() {
+    }
+
+    public Attendance(Long id, User user, LocalDate workDate, LocalDateTime clockIn, LocalDateTime clockOut, String status) {
+        this.id = id;
+        this.user = user;
+        this.workDate = workDate;
+        this.clockIn = clockIn;
+        this.clockOut = clockOut;
+        this.status = status;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public LocalDate getWorkDate() {
+        return workDate;
+    }
+
+    public void setWorkDate(LocalDate workDate) {
+        this.workDate = workDate;
+    }
+
+    public LocalDateTime getClockIn() {
+        return clockIn;
+    }
+
+    public void setClockIn(LocalDateTime clockIn) {
+        this.clockIn = clockIn;
+    }
+
+    public LocalDateTime getClockOut() {
+        return clockOut;
+    }
+
+    public void setClockOut(LocalDateTime clockOut) {
+        this.clockOut = clockOut;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }

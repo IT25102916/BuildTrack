@@ -36,7 +36,7 @@ public class DailyLogController {
             l.setManpowerCount(updates.getManpowerCount());
             l.setWorkPerformed(updates.getWorkPerformed());
             l.setDelays(updates.getDelays());
-            l.setSigned(updates.isSigned());
+            l.setSigned(updates.isIsSigned());
             l.setSignedByName(updates.getSignedByName());
             l.setPhotoCount(updates.getPhotoCount());
             return ResponseEntity.ok(dailyLogRepository.save(l));

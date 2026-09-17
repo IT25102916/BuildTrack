@@ -41,8 +41,8 @@ public class TaskController {
             t.setEndDate(updates.getEndDate());
             t.setAssignedUserId(updates.getAssignedUserId());
             t.setAssignedName(updates.getAssignedName());
-            t.setMilestone(updates.isMilestone());
-            t.setCritical(updates.isCritical());
+            t.setMilestone(updates.isIsMilestone());
+            t.setCritical(updates.isIsCritical());
             return ResponseEntity.ok(taskRepository.save(t));
         }).orElse(ResponseEntity.notFound().build());
     }

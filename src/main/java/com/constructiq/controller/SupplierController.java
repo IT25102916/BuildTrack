@@ -20,13 +20,13 @@ public class SupplierController {
 
     // ── Suppliers ─────────────────────────────────────────
 
-    @GetMapping("/api/suppliers")
+    @GetMapping
     public List<Supplier> getAllSuppliers() { return supplierRepository.findAll(); }
 
-    @PostMapping("/api/suppliers")
+    @PostMapping
     public Supplier createSupplier(@RequestBody Supplier s) { return supplierRepository.save(s); }
 
-    @PutMapping("/api/suppliers/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<Supplier> updateSupplier(@PathVariable Long id, @RequestBody Supplier updates) {
         return supplierRepository.findById(id).map(s -> {
             s.setName(updates.getName());
@@ -36,12 +36,12 @@ public class SupplierController {
             s.setType(updates.getType());
             s.setRating(updates.getRating());
             s.setOnTimePercent(updates.getOnTimePercent());
-            s.setActive(updates.isActive());
+            s.setActive(updates.isIsActive());
             return ResponseEntity.ok(supplierRepository.save(s));
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/api/suppliers/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSupplier(@PathVariable Long id) {
         if (!supplierRepository.existsById(id)) return ResponseEntity.notFound().build();
         supplierRepository.deleteById(id);
@@ -50,13 +50,13 @@ public class SupplierController {
 
     // ── Subcontractors ────────────────────────────────────
 
-    @GetMapping("/api/subcontractors")
+    @GetMapping("/subcontractors")
     public List<Subcontractor> getAllSubcontractors() { return subcontractorRepository.findAll(); }
 
-    @PostMapping("/api/subcontractors")
+    @PostMapping("/subcontractors")
     public Subcontractor createSubcontractor(@RequestBody Subcontractor s) { return subcontractorRepository.save(s); }
 
-    @PutMapping("/api/subcontractors/{id}")
+    @PutMapping("/subcontractors/{id}")
     public ResponseEntity<Subcontractor> updateSubcontractor(@PathVariable Long id, @RequestBody Subcontractor updates) {
         return subcontractorRepository.findById(id).map(s -> {
             s.setName(updates.getName());
@@ -71,7 +71,7 @@ public class SupplierController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/api/subcontractors/{id}")
+    @DeleteMapping("/subcontractors/{id}")
     public ResponseEntity<Void> deleteSubcontractor(@PathVariable Long id) {
         if (!subcontractorRepository.existsById(id)) return ResponseEntity.notFound().build();
         subcontractorRepository.deleteById(id);

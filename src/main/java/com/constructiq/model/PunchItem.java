@@ -1,17 +1,11 @@
 package com.constructiq.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "punch_items")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class PunchItem {
 
     @Id
@@ -47,4 +41,109 @@ public class PunchItem {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public PunchItem() {
+    }
+
+    public PunchItem(Long id, Long projectId, String location, String description, boolean hasPhoto, String responsibleParty, String status, LocalDate dueDate, LocalDate openedDate, LocalDate closedDate, LocalDateTime createdAt) {
+        this.id = id;
+        this.projectId = projectId;
+        this.location = location;
+        this.description = description;
+        this.hasPhoto = hasPhoto;
+        this.responsibleParty = responsibleParty;
+        this.status = status;
+        this.dueDate = dueDate;
+        this.openedDate = openedDate;
+        this.closedDate = closedDate;
+        this.createdAt = createdAt;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public boolean isHasPhoto() {
+        return hasPhoto;
+    }
+
+    public void setHasPhoto(boolean hasPhoto) {
+        this.hasPhoto = hasPhoto;
+    }
+
+    public String getResponsibleParty() {
+        return responsibleParty;
+    }
+
+    public void setResponsibleParty(String responsibleParty) {
+        this.responsibleParty = responsibleParty;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public LocalDate getOpenedDate() {
+        return openedDate;
+    }
+
+    public void setOpenedDate(LocalDate openedDate) {
+        this.openedDate = openedDate;
+    }
+
+    public LocalDate getClosedDate() {
+        return closedDate;
+    }
+
+    public void setClosedDate(LocalDate closedDate) {
+        this.closedDate = closedDate;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
