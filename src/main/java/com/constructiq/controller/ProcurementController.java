@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/procurement")
@@ -29,9 +30,11 @@ public class ProcurementController {
     }
 
     @PostMapping("/material-requests")
+    @RequireRole({"supervisor", "procurement", "admin"})
     public MaterialRequest createMR(@RequestBody MaterialRequest mr) { return materialRequestRepository.save(mr); }
 
     @PutMapping("/material-requests/{id}")
+    @RequireRole({"supervisor", "procurement", "admin"})
     public ResponseEntity<MaterialRequest> updateMR(@PathVariable Long id, @RequestBody MaterialRequest updates) {
         return materialRequestRepository.findById(id).map(mr -> {
             mr.setStatus(updates.getStatus());
@@ -41,6 +44,7 @@ public class ProcurementController {
     }
 
     @DeleteMapping("/material-requests/{id}")
+    @RequireRole({"supervisor", "procurement", "admin"})
     public ResponseEntity<Void> deleteMR(@PathVariable Long id) {
         if (!materialRequestRepository.existsById(id)) return ResponseEntity.notFound().build();
         materialRequestRepository.deleteById(id);
@@ -60,9 +64,11 @@ public class ProcurementController {
     }
 
     @PostMapping("/purchase-orders")
+    @RequireRole({"procurement", "admin"})
     public PurchaseOrder createPO(@RequestBody PurchaseOrder po) { return purchaseOrderRepository.save(po); }
 
     @PutMapping("/purchase-orders/{id}")
+    @RequireRole({"procurement", "admin"})
     public ResponseEntity<PurchaseOrder> updatePO(@PathVariable Long id, @RequestBody PurchaseOrder updates) {
         return purchaseOrderRepository.findById(id).map(po -> {
             po.setStatus(updates.getStatus());
@@ -73,6 +79,7 @@ public class ProcurementController {
     }
 
     @DeleteMapping("/purchase-orders/{id}")
+    @RequireRole({"procurement", "admin"})
     public ResponseEntity<Void> deletePO(@PathVariable Long id) {
         if (!purchaseOrderRepository.existsById(id)) return ResponseEntity.notFound().build();
         purchaseOrderRepository.deleteById(id);
@@ -87,11 +94,13 @@ public class ProcurementController {
     }
 
     @PostMapping("/quotations")
+    @RequireRole({"procurement", "admin"})
     public Quotation createQuotation(@RequestBody Quotation quotation) {
         return quotationRepository.save(quotation);
     }
 
     @PutMapping("/quotations/{id}/accept")
+    @RequireRole({"procurement", "admin"})
     public ResponseEntity<Quotation> acceptQuotation(@PathVariable Long id) {
         return quotationRepository.findById(id).map(acceptedQuote -> {
             acceptedQuote.setStatus("ACCEPTED");

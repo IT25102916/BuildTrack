@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navTeam.addEventListener('click', (e) => { e.preventDefault(); switchView('team'); loadTeam(); });
     navDocuments.addEventListener('click', (e) => { e.preventDefault(); switchView('documents'); loadDocuments(); });
     navAnalytics.addEventListener('click', (e) => { e.preventDefault(); switchView('analytics'); renderAnalytics(); });
-    navContractors.addEventListener('click', (e) => { e.preventDefault(); switchView('contractors'); });
+    navContractors.addEventListener('click', (e) => { e.preventDefault(); switchView('contractors'); loadContractors(); });
     navReports.addEventListener('click', (e) => { e.preventDefault(); switchView('reports'); });
     navSettings.addEventListener('click', (e) => { e.preventDefault(); switchView('settings'); renderSettings(); });
     navFinance.addEventListener('click', (e) => { e.preventDefault(); switchView('finance'); loadFinanceData(); });
@@ -1327,6 +1327,242 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Make all data-tables horizontally scrollable to prevent overlapping
+    // ==========================================
+    // Contractors & Suppliers Module
+    // ==========================================
+
+    const btnTabSubcontractors = document.getElementById('btn-tab-subcontractors');
+    const btnTabSuppliers = document.getElementById('btn-tab-suppliers');
+    const subcontractorsView = document.getElementById('subcontractors-view');
+    const suppliersView = document.getElementById('suppliers-view');
+
+    if(btnTabSubcontractors) btnTabSubcontractors.addEventListener('click', () => {
+        btnTabSubcontractors.classList.add('active');
+        btnTabSuppliers.classList.remove('active');
+        subcontractorsView.classList.remove('hidden');
+        suppliersView.classList.add('hidden');
+        loadSubcontractors();
+    });
+
+    if(btnTabSuppliers) btnTabSuppliers.addEventListener('click', () => {
+        btnTabSuppliers.classList.add('active');
+        btnTabSubcontractors.classList.remove('active');
+        suppliersView.classList.remove('hidden');
+        subcontractorsView.classList.add('hidden');
+        loadSuppliers();
+    });
+
+    // Subcontractors
+    async function loadContractors() {
+        if(btnTabSubcontractors && btnTabSubcontractors.classList.contains('active')) {
+            loadSubcontractors();
+        } else {
+            loadSuppliers();
+        }
+    }
+    
+    window.loadContractors = loadContractors; // Make globally accessible just in case
+
+    async function loadSubcontractors() {
+        try {
+            const subs = await api.get('/suppliers/subcontractors');
+            const tbody = document.getElementById('subcontractors-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            subs.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${s.name}</td>
+                    <td>${s.contactName || ''}</td>
+                    <td>${s.phone || ''}</td>
+                    <td>${s.licenseNumber || ''}</td>
+                    <td><span class="status-badge ${s.status === 'Active' ? 'status-active' : 'status-inactive'}">${s.status}</span></td>
+                    <td data-requires-role="procurement,admin">
+                        <button class="btn btn-secondary btn-sm" onclick="editSubcontractor(${s.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger-color)" onclick="deleteSubcontractor(${s.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            applyRoleRestrictions();
+        } catch(e) {
+            console.error('Failed to load subcontractors', e);
+        }
+    }
+
+    const subcontractorModal = document.getElementById('subcontractor-modal');
+    if(document.getElementById('btn-add-subcontractor')) {
+        document.getElementById('btn-add-subcontractor').addEventListener('click', () => {
+            document.getElementById('subcontractor-form').reset();
+            document.getElementById('subcontractor-id').value = '';
+            document.getElementById('subcontractor-modal-title').textContent = 'Add Subcontractor';
+            subcontractorModal.classList.remove('hidden');
+        });
+    }
+
+    if(document.getElementById('btn-close-subcontractor-modal')) {
+        document.getElementById('btn-close-subcontractor-modal').addEventListener('click', () => subcontractorModal.classList.add('hidden'));
+        document.getElementById('btn-cancel-subcontractor-modal').addEventListener('click', () => subcontractorModal.classList.add('hidden'));
+    }
+
+    if(document.getElementById('subcontractor-form')) {
+        document.getElementById('subcontractor-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('subcontractor-id').value;
+            const data = {
+                name: document.getElementById('subcontractor-name').value,
+                contactName: document.getElementById('subcontractor-contact').value,
+                phone: document.getElementById('subcontractor-phone').value,
+                email: document.getElementById('subcontractor-email').value,
+                licenseNumber: document.getElementById('subcontractor-license').value,
+                insuranceExpiry: document.getElementById('subcontractor-insurance').value,
+                status: document.getElementById('subcontractor-status').value
+            };
+            try {
+                if(id) {
+                    await api.put('/suppliers/subcontractors/' + id, data);
+                } else {
+                    await api.post('/suppliers/subcontractors', data);
+                }
+                subcontractorModal.classList.add('hidden');
+                loadSubcontractors();
+            } catch(error) {
+                alert('Error saving subcontractor');
+            }
+        });
+    }
+
+    window.editSubcontractor = async (id) => {
+        try {
+            const subs = await api.get('/suppliers/subcontractors');
+            const sub = subs.find(s => s.id === id);
+            if(sub) {
+                document.getElementById('subcontractor-id').value = sub.id;
+                document.getElementById('subcontractor-name').value = sub.name;
+                document.getElementById('subcontractor-contact').value = sub.contactName || '';
+                document.getElementById('subcontractor-phone').value = sub.phone || '';
+                document.getElementById('subcontractor-email').value = sub.email || '';
+                document.getElementById('subcontractor-license').value = sub.licenseNumber || '';
+                if(sub.insuranceExpiry) {
+                    document.getElementById('subcontractor-insurance').value = sub.insuranceExpiry.split('T')[0];
+                }
+                document.getElementById('subcontractor-status').value = sub.status || 'Active';
+                document.getElementById('subcontractor-modal-title').textContent = 'Edit Subcontractor';
+                subcontractorModal.classList.remove('hidden');
+            }
+        } catch(e) { console.error(e); }
+    };
+
+    window.deleteSubcontractor = async (id) => {
+        if(confirm('Are you sure you want to delete this subcontractor?')) {
+            try {
+                await api.delete('/suppliers/subcontractors/' + id);
+                loadSubcontractors();
+            } catch(e) {
+                alert('Error deleting subcontractor');
+            }
+        }
+    };
+
+    // Suppliers
+    async function loadSuppliers() {
+        try {
+            const suppliers = await api.get('/suppliers');
+            const tbody = document.getElementById('suppliers-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            suppliers.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${s.name} ${!s.active ? '<span class="status-badge status-inactive">Inactive</span>' : ''}</td>
+                    <td>${s.contactName || ''}</td>
+                    <td>${s.phone || ''}</td>
+                    <td>${s.type || ''}</td>
+                    <td>${s.rating ? s.rating + '/5' : 'N/A'}</td>
+                    <td data-requires-role="procurement,admin">
+                        <button class="btn btn-secondary btn-sm" onclick="editSupplier(${s.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger-color)" onclick="deleteSupplier(${s.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            applyRoleRestrictions();
+        } catch(e) {
+            console.error('Failed to load suppliers', e);
+        }
+    }
+
+    const supplierModal = document.getElementById('supplier-modal');
+    if(document.getElementById('btn-add-supplier')) {
+        document.getElementById('btn-add-supplier').addEventListener('click', () => {
+            document.getElementById('supplier-form').reset();
+            document.getElementById('supplier-id').value = '';
+            document.getElementById('supplier-active').checked = true;
+            document.getElementById('supplier-modal-title').textContent = 'Add Supplier';
+            supplierModal.classList.remove('hidden');
+        });
+    }
+
+    if(document.getElementById('btn-close-supplier-modal')) {
+        document.getElementById('btn-close-supplier-modal').addEventListener('click', () => supplierModal.classList.add('hidden'));
+        document.getElementById('btn-cancel-supplier-modal').addEventListener('click', () => supplierModal.classList.add('hidden'));
+    }
+
+    if(document.getElementById('supplier-form')) {
+        document.getElementById('supplier-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('supplier-id').value;
+            const data = {
+                name: document.getElementById('supplier-name').value,
+                contactName: document.getElementById('supplier-contact').value,
+                phone: document.getElementById('supplier-phone').value,
+                email: document.getElementById('supplier-email').value,
+                type: document.getElementById('supplier-type').value,
+                active: document.getElementById('supplier-active').checked
+            };
+            try {
+                if(id) {
+                    await api.put('/suppliers/' + id, data);
+                } else {
+                    await api.post('/suppliers', data);
+                }
+                supplierModal.classList.add('hidden');
+                loadSuppliers();
+            } catch(error) {
+                alert('Error saving supplier');
+            }
+        });
+    }
+
+    window.editSupplier = async (id) => {
+        try {
+            const suppliers = await api.get('/suppliers');
+            const sub = suppliers.find(s => s.id === id);
+            if(sub) {
+                document.getElementById('supplier-id').value = sub.id;
+                document.getElementById('supplier-name').value = sub.name;
+                document.getElementById('supplier-contact').value = sub.contactName || '';
+                document.getElementById('supplier-phone').value = sub.phone || '';
+                document.getElementById('supplier-email').value = sub.email || '';
+                document.getElementById('supplier-type').value = sub.type || '';
+                document.getElementById('supplier-active').checked = sub.active;
+                document.getElementById('supplier-modal-title').textContent = 'Edit Supplier';
+                supplierModal.classList.remove('hidden');
+            }
+        } catch(e) { console.error(e); }
+    };
+
+    window.deleteSupplier = async (id) => {
+        if(confirm('Are you sure you want to delete this supplier?')) {
+            try {
+                await api.delete('/suppliers/' + id);
+                loadSuppliers();
+            } catch(e) {
+                alert('Error deleting supplier');
+            }
+        }
+    };
+
     function makeTablesResponsive() {
         document.querySelectorAll('table.data-table').forEach(table => {
             if (!table.parentElement.classList.contains('table-responsive')) {

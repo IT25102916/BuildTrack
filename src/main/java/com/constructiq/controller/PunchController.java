@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/punch")
@@ -22,9 +23,11 @@ public class PunchController {
     }
 
     @PostMapping
+    @RequireRole({"supervisor", "pm", "admin"})
     public PunchItem create(@RequestBody PunchItem item) { return punchItemRepository.save(item); }
 
     @PutMapping("/{id}")
+    @RequireRole({"supervisor", "pm", "admin"})
     public ResponseEntity<PunchItem> update(@PathVariable Long id, @RequestBody PunchItem updates) {
         return punchItemRepository.findById(id).map(p -> {
             p.setStatus(updates.getStatus());
@@ -38,6 +41,7 @@ public class PunchController {
     }
 
     @DeleteMapping("/{id}")
+    @RequireRole({"supervisor", "pm", "admin"})
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!punchItemRepository.existsById(id)) return ResponseEntity.notFound().build();
         punchItemRepository.deleteById(id);

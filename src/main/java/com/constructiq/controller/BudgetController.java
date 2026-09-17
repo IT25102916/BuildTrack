@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/budget")
@@ -26,11 +27,13 @@ public class BudgetController {
     }
 
     @PostMapping("/lines")
+    @RequireRole({"finance", "admin"})
     public BudgetLine createLine(@RequestBody BudgetLine line) {
         return budgetLineRepository.save(line);
     }
 
     @PutMapping("/lines/{id}")
+    @RequireRole({"finance", "admin"})
     public ResponseEntity<BudgetLine> updateLine(@PathVariable Long id, @RequestBody BudgetLine updates) {
         return budgetLineRepository.findById(id).map(l -> {
             l.setCostCode(updates.getCostCode());
@@ -43,6 +46,7 @@ public class BudgetController {
     }
 
     @DeleteMapping("/lines/{id}")
+    @RequireRole({"finance", "admin"})
     public ResponseEntity<Void> deleteLine(@PathVariable Long id) {
         if (!budgetLineRepository.existsById(id)) return ResponseEntity.notFound().build();
         budgetLineRepository.deleteById(id);
@@ -57,11 +61,13 @@ public class BudgetController {
     }
 
     @PostMapping("/change-orders")
+    @RequireRole({"finance", "admin"})
     public ChangeOrder createChangeOrder(@RequestBody ChangeOrder co) {
         return changeOrderRepository.save(co);
     }
 
     @PutMapping("/change-orders/{id}")
+    @RequireRole({"finance", "admin"})
     public ResponseEntity<ChangeOrder> updateChangeOrder(@PathVariable Long id, @RequestBody ChangeOrder updates) {
         return changeOrderRepository.findById(id).map(co -> {
             co.setStatus(updates.getStatus());

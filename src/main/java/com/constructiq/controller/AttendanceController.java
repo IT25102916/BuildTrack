@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/attendance")
@@ -28,6 +29,7 @@ public class AttendanceController {
     }
 
     @PostMapping("/clock-in")
+    @RequireRole({"admin", "supervisor", "pm"})
     public ResponseEntity<Attendance> clockIn(@RequestBody Attendance attendance) {
         attendance.setWorkDate(LocalDate.now());
         attendance.setClockIn(LocalDateTime.now());
@@ -36,6 +38,7 @@ public class AttendanceController {
     }
 
     @PutMapping("/{id}/clock-out")
+    @RequireRole({"admin", "supervisor", "pm"})
     public ResponseEntity<Attendance> clockOut(@PathVariable Long id) {
         return attendanceRepository.findById(id).map(a -> {
             a.setClockOut(LocalDateTime.now());

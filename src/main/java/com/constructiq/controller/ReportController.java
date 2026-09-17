@@ -10,6 +10,7 @@ import com.constructiq.repository.TransactionRepository;
 import com.constructiq.repository.ProjectRepository;
 import com.constructiq.repository.TaskRepository;
 import com.constructiq.repository.BudgetLineRepository;
+import com.constructiq.security.RequireRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,8 +20,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/reports")
+@RequireRole({"pm", "finance", "admin"})
 @SuppressWarnings("null")
 public class ReportController {
 

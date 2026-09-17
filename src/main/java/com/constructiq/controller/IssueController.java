@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/issues")
@@ -22,11 +23,13 @@ public class IssueController {
     }
 
     @PostMapping
+    @RequireRole({"supervisor", "pm", "admin"})
     public Issue reportIssue(@RequestBody Issue issue) {
         return issueRepository.save(issue);
     }
 
     @PutMapping("/{id}")
+    @RequireRole({"supervisor", "pm", "admin"})
     public ResponseEntity<Issue> updateIssueStatus(@PathVariable Long id, @RequestBody Issue updates) {
         return issueRepository.findById(id).map(issue -> {
             issue.setStatus(updates.getStatus());

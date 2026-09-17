@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -29,9 +30,11 @@ public class TaskController {
     }
 
     @PostMapping
+    @RequireRole({"pm", "admin"})
     public Task create(@RequestBody Task task) { return taskRepository.save(task); }
 
     @PutMapping("/{id}")
+    @RequireRole({"pm", "admin"})
     public ResponseEntity<Task> update(@PathVariable Long id, @RequestBody Task updates) {
         return taskRepository.findById(id).map(t -> {
             t.setName(updates.getName());
@@ -48,6 +51,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
+    @RequireRole({"pm", "admin"})
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!taskRepository.existsById(id)) return ResponseEntity.notFound().build();
         taskRepository.deleteById(id);

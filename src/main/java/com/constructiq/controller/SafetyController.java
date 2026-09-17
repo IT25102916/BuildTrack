@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/safety")
@@ -21,9 +22,11 @@ public class SafetyController {
     }
 
     @PostMapping
+    @RequireRole({"supervisor", "pm", "admin"})
     public Incident create(@RequestBody Incident incident) { return incidentRepository.save(incident); }
 
     @PutMapping("/{id}")
+    @RequireRole({"supervisor", "pm", "admin"})
     public ResponseEntity<Incident> update(@PathVariable Long id, @RequestBody Incident updates) {
         return incidentRepository.findById(id).map(i -> {
             i.setStatus(updates.getStatus());
@@ -34,6 +37,7 @@ public class SafetyController {
     }
 
     @DeleteMapping("/{id}")
+    @RequireRole({"supervisor", "pm", "admin"})
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!incidentRepository.existsById(id)) return ResponseEntity.notFound().build();
         incidentRepository.deleteById(id);

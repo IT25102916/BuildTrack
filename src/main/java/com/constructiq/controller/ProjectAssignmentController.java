@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/projects/{projectId}/assignments")
@@ -33,6 +34,7 @@ public class ProjectAssignmentController {
     }
 
     @PostMapping("/{userId}")
+    @RequireRole({"admin"})
     public ResponseEntity<ProjectAssignment> assignUser(@PathVariable Long projectId, @PathVariable Long userId) {
         ProjectAssignment assignment = new ProjectAssignment();
         assignment.setProject(projectRepository.findById(projectId).orElseThrow());
@@ -42,6 +44,7 @@ public class ProjectAssignmentController {
     }
 
     @DeleteMapping("/{assignmentId}")
+    @RequireRole({"admin"})
     public ResponseEntity<Void> removeAssignment(@PathVariable Long projectId, @PathVariable Long assignmentId) {
         assignmentRepository.deleteById(assignmentId);
         return ResponseEntity.noContent().build();

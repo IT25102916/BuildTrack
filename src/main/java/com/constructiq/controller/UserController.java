@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/users")
@@ -26,9 +27,11 @@ public class UserController {
     }
 
     @PostMapping
+    @RequireRole({"admin"})
     public User create(@RequestBody User user) { return userRepository.save(user); }
 
     @PutMapping("/{id}")
+    @RequireRole({"admin"})
     public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User updates) {
         return userRepository.findById(id).map(u -> {
             u.setName(updates.getName());
@@ -40,6 +43,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @RequireRole({"admin"})
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!userRepository.existsById(id)) return ResponseEntity.notFound().build();
         userRepository.deleteById(id);
