@@ -77,7 +77,7 @@
                         <h1 class="page-title">Project Portfolio</h1>
                         <p class="page-subtitle">Manage and track your active construction projects</p>
                     </div>
-                    <button class="btn btn-primary" id="btn-new-project">
+                    <button class="btn btn-primary" id="btn-new-project" data-requires-role="admin">
                         <i class="fa-solid fa-plus"></i> New Project
                     </button>
                 </div>
@@ -120,7 +120,7 @@
                             <h1 class="page-title">Team Directory</h1>
                             <p class="page-subtitle">Manage members, roles, and access across projects</p>
                         </div>
-                        <button class="btn btn-primary" id="btn-new-user">
+                        <button class="btn btn-primary" id="btn-new-user" data-requires-role="admin">
                             <i class="fa-solid fa-plus"></i> Add Member
                         </button>
                     </div>
@@ -128,7 +128,7 @@
                     <div class="card team-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                             <div class="tabs">
-                                <button class="btn btn-secondary active" id="btn-directory-tab">Directory</button>
+                                <button class="btn btn-secondary active" id="btn-directory-tab" data-requires-role="admin">Directory</button>
                                 <button class="btn btn-secondary" id="btn-attendance-tab">Attendance</button>
                             </div>
                         </div>
@@ -710,6 +710,30 @@
         </main>
     </div>
 
+    
+    <!-- Assign PM Modal -->
+    <div id="assign-pm-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Assign Staff to Project</h2>
+                <button class="close-btn" id="btn-close-assign-pm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="assign-pm-form">
+                <input type="hidden" id="assign-pm-project-id" />
+                <div class="form-group">
+                    <label>Select Staff</label>
+                    <select id="assign-pm-user-id" required>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-assign-pm">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Project Modal -->
     <div id="project-modal" class="modal-overlay hidden">
         <div class="modal-content">
@@ -1130,21 +1154,27 @@
                 </button>
                 <div style="margin-top: 20px; text-align: center; border-top: 1px solid var(--border-color); padding-top: 15px;">
                     <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">Demo Accounts</p>
-                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                         <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='admin@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
                             Admin
                         </button>
                         <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='pm@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
                             PM
                         </button>
-                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='supervisor@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
-                            Supervisor
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='site_eng@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            Site Engineer
                         </button>
                         <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='finance@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
                             Finance
                         </button>
                         <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='procurement@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
                             Procurement
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='inventory@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            Inventory
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='subcontractor@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
+                            Subcontractor
                         </button>
                         <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('login-email').value='client@constructiq.com'; document.getElementById('login-password').value='demo'; document.getElementById('btn-login').click();">
                             Client

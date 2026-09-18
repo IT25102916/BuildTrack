@@ -19,36 +19,47 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (userRepository.count() == 0) {
-            User admin = new User();
-            admin.setName("Admin User");
-            admin.setEmail("admin@constructiq.com");
-            admin.setRole("Admin");
-            admin.setPasswordHash("admin");
-            admin.setAvatarInitials("AU");
-            
-            User pm = new User();
-            pm.setName("Project Manager");
-            pm.setEmail("pm@constructiq.com");
-            pm.setRole("Project Manager");
-            pm.setPasswordHash("pm");
-            pm.setAvatarInitials("PM");
-            
-            User fe = new User();
-            fe.setName("Finance Executive");
-            fe.setEmail("finance@constructiq.com");
-            fe.setRole("Finance Executive");
-            fe.setPasswordHash("demo");
-            fe.setAvatarInitials("FE");
+        // List of unwanted legacy/duplicate account emails to remove
+        List<String> unwantedEmails = List.of(
+            "admin_officer@constructiq.com",
+            "finance_exec@constructiq.com",
+            "inventory_sup@constructiq.com",
+            "procurement_off@constructiq.com",
+            "supervisor@constructiq.com",
+            "jdoe@example.com",
+            "client@example.com"
+        );
 
-            User inv = new User();
-            inv.setName("Inventory Supervisor");
-            inv.setEmail("inventory@constructiq.com");
-            inv.setRole("Inventory Supervisor");
-            inv.setPasswordHash("demo");
-            inv.setAvatarInitials("IS");
-
-            userRepository.saveAll(List.of(admin, pm, fe, inv));
+        for (String email : unwantedEmails) {
+            userRepository.findByEmail(email).ifPresent(user -> {
+                try {
+                    userRepository.delete(user);
+                } catch (Exception ignored) {
+                    // Ignore if foreign keys prevent deletion
+                }
+            });
         }
+
+        // Ensure 8 standard user accounts exist with password 'demo'
+        seedUser("Alexander Vance", "admin@constructiq.com", "admin", "AV", "+1 (555) 010-1001");
+        seedUser("Marcus Brody", "pm@constructiq.com", "pm", "MB", "+1 (555) 010-1002");
+        seedUser("Elena Rostova", "site_eng@constructiq.com", "site_engineer", "ER", "+1 (555) 010-1003");
+        seedUser("Sarah Jenkins", "finance@constructiq.com", "finance", "SJ", "+1 (555) 010-1004");
+        seedUser("David Chen", "procurement@constructiq.com", "procurement", "DC", "+1 (555) 010-1005");
+        seedUser("Carlos Mendez", "inventory@constructiq.com", "inventory_manager", "CM", "+1 (555) 010-1006");
+        seedUser("Liam O'Connor", "subcontractor@constructiq.com", "subcontractor", "LO", "+1 (555) 010-1007");
+        seedUser("Victoria Sterling", "client@constructiq.com", "client", "VS", "+1 (555) 010-1008");
+    }
+
+    private void seedUser(String name, String email, String role, String avatar, String phone) {
+        User user = userRepository.findByEmail(email).orElseGet(User::new);
+        user.setName(name);
+        user.setEmail(email);
+        user.setRole(role);
+        user.setPasswordHash("demo");
+        user.setAvatarInitials(avatar);
+        user.setPhone(phone);
+        user.setActive(true);
+        userRepository.save(user);
     }
 }

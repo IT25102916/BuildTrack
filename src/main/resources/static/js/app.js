@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             [navProjects, navTeam, navDocuments, navAnalytics, navContractors, navReports, navSettings].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
-        } else if (role === 'supervisor') {
+        } else if (role === 'site_engineer') {
             [navProjects, navDocuments, navReports].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
@@ -153,16 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
             [navProjects, navInventory, navContractors, navReports].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
-        } else if (role === 'finance') {
+        } else if (role === 'finance' || role === 'finance executive') {
             [navProjects, navFinance, navReports, navAnalytics].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
-        } else if (role === 'client') {
-            [navInventory].forEach(nav => {
-                if(nav && nav.parentElement) {
-                    nav.parentElement.style.display = 'block';
-                    nav.innerHTML = '<i class="fa-solid fa-boxes-stacked"></i> My Materials';
-                }
+        } else if (role === 'inventory_manager') {
+            [navProjects, navInventory, navReports].forEach(nav => {
+                if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         }
 
@@ -236,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size:14px; color:var(--text-secondary);">Recorded this month</div>
                 </div>
             `;
-        } else if (role === 'inventory supervisor' || role === 'store and inventory supervisor') {
+        } else if (role === 'inventory_manager') {
             dashboardContent.innerHTML = `
                 <div class="card" style="padding: 20px;">
                     <h3 style="margin-bottom:10px;"><i class="fa-solid fa-boxes-stacked" style="color:var(--brand-primary); margin-right:8px;"></i> Total Items</h3>
@@ -311,6 +308,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (viewName === 'team') {
             navTeam.parentElement.classList.add('active');
             viewTeam.classList.remove('hidden');
+            if (currentUser && currentUser.role.toLowerCase() === 'pm') {
+                btnDirectoryTab.classList.remove('active');
+                btnAttendanceTab.classList.add('active');
+                teamDirectorySection.classList.add('hidden');
+                teamAttendanceSection.classList.remove('hidden');
+                loadAttendance();
+            }
         } else if (viewName === 'documents') {
             navDocuments.parentElement.classList.add('active');
             viewDocuments.classList.remove('hidden');
@@ -1085,8 +1089,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         </span>
                     </td>
                     <td>
-                        <button class="btn-icon" onclick="editProject(${project.id})" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn-icon danger" onclick="deleteProject(${project.id})" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                        ${(currentUser && (currentUser.role.toLowerCase() === 'admin' || currentUser.role.toLowerCase() === 'pm')) ? `<button class="btn-icon" onclick="editProject(${project.id})" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
+                        ${(currentUser && currentUser.role.toLowerCase() === 'admin') ? `<button class="btn-icon danger" onclick="deleteProject(${project.id})" title="Delete"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        ${(currentUser && currentUser.role.toLowerCase() === 'admin') ? `<button class="btn-icon" onclick="assignPm(${project.id})" title="Assign PM"><i class="fa-solid fa-user-plus"></i></button>` : ''}
                     </td>
                 `;
                 projectsTableBody.appendChild(tr);
@@ -1869,18 +1874,75 @@ document.addEventListener('DOMContentLoaded', () => {
     makeTablesResponsive();
 
     function applyRoleRestrictions() {
+        if (!currentUser) return;
         const role = currentUser.role.toLowerCase();
         
-        // Inventory View Restrictions
-        const btnNewInventoryItem = document.getElementById('btn-new-item');
+        document.querySelectorAll('[data-requires-role]').forEach(el => {
+            const requiredRoles = el.getAttribute('data-requires-role').split(',').map(r => r.trim().toLowerCase());
+            if (requiredRoles.includes(role) || role === 'admin') {
+                el.style.display = ''; // Reset to default
+            } else {
+                el.style.display = 'none';
+            }
+        });
         
+        // Inventory View Specific Restrictions
+        const btnNewInventoryItem = document.getElementById('btn-new-item');
         if (role === 'client') {
             if (btnNewInventoryItem) btnNewInventoryItem.style.display = 'none';
             const tabContainer = document.querySelector('.tabs');
             if (tabContainer) tabContainer.style.display = 'none';
-        } else if (role !== 'admin' && role !== 'procurement') {
+        } else if (role !== 'admin' && role !== 'procurement' && role !== 'inventory_manager') {
             if (btnNewInventoryItem) btnNewInventoryItem.style.display = 'none';
         }
+    }
+
+
+    // ── Assign PM Logic ──
+    const assignPmModal = document.getElementById('assign-pm-modal');
+    const assignPmForm = document.getElementById('assign-pm-form');
+    const btnCloseAssignPm = document.getElementById('btn-close-assign-pm');
+    const btnCancelAssignPm = document.getElementById('btn-cancel-assign-pm');
+    const assignPmUserId = document.getElementById('assign-pm-user-id');
+    const assignPmProjectId = document.getElementById('assign-pm-project-id');
+
+    if (btnCloseAssignPm) btnCloseAssignPm.addEventListener('click', () => assignPmModal.classList.add('hidden'));
+    if (btnCancelAssignPm) btnCancelAssignPm.addEventListener('click', () => assignPmModal.classList.add('hidden'));
+
+    window.assignPm = async function(projectId) {
+        assignPmProjectId.value = projectId;
+        try {
+            const users = await api.get('/users');
+            // Filter to pm or site_engineer
+            const staff = users.filter(u => u.role.toLowerCase() === 'pm' || u.role.toLowerCase() === 'site_engineer');
+            assignPmUserId.innerHTML = '<option value="">-- Select Staff --</option>';
+            staff.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = `${u.name} (${u.role})`;
+                assignPmUserId.appendChild(opt);
+            });
+            assignPmModal.classList.remove('hidden');
+        } catch (err) {
+            showToast('Error', 'Failed to load users', 'error');
+        }
+    };
+
+    if (assignPmForm) {
+        assignPmForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const projectId = assignPmProjectId.value;
+            const userId = assignPmUserId.value;
+            if (!userId) return;
+
+            try {
+                await api.post(`/projects/${projectId}/assignments/${userId}`, {});
+                showToast('Success', 'Staff assigned to project', 'success');
+                assignPmModal.classList.add('hidden');
+            } catch (err) {
+                showToast('Error', 'Failed to assign staff. They might already be assigned.', 'error');
+            }
+        });
     }
 
 });

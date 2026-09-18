@@ -1,7 +1,10 @@
 package com.constructiq.controller;
 
 import com.constructiq.model.Project;
+import com.constructiq.model.User;
+import com.constructiq.repository.UserRepository;
 import com.constructiq.service.ProjectService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,15 +19,27 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public ProjectController(ProjectService projectService) {
+    public ProjectController(ProjectService projectService, UserRepository userRepository) {
         this.projectService = projectService;
+        this.userRepository = userRepository;
+    }
+
+    private User getCurrentUser(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return null;
+        return userRepository.findById(userId).orElse(null);
     }
 
     @GetMapping
-    public ResponseEntity<List<Project>> getAllProjects() {
-        return ResponseEntity.ok(projectService.getAllProjects());
+    public ResponseEntity<List<Project>> getAllProjects(HttpSession session) {
+        User user = getCurrentUser(session);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(projectService.getAllProjects(user.getId(), user.getRole().toLowerCase()));
     }
 
     @GetMapping("/{id}")
@@ -33,7 +48,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    @RequireRole({"pm", "admin"})
+    @RequireRole({"admin"})
     public ResponseEntity<Project> createProject(@Valid @RequestBody Project project) {
         Project createdProject = projectService.createProject(project);
         return new ResponseEntity<>(createdProject, HttpStatus.CREATED);
@@ -41,12 +56,22 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     @RequireRole({"pm", "admin"})
-    public ResponseEntity<Project> updateProject(@PathVariable Long id, @Valid @RequestBody Project project) {
-        return ResponseEntity.ok(projectService.updateProject(id, project));
+    public ResponseEntity<Project> updateProject(@PathVariable Long id, @Valid @RequestBody Project project, HttpSession session) {
+        User user = getCurrentUser(session);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            Project updated = projectService.updateProject(id, project, user.getId(), user.getRole().toLowerCase());
+            return ResponseEntity.ok(updated);
+        } catch (SecurityException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({"pm", "admin"})
+    @RequireRole({"admin"})
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.noContent().build();

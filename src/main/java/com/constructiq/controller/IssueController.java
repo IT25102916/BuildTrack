@@ -23,13 +23,13 @@ public class IssueController {
     }
 
     @PostMapping
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public Issue reportIssue(@RequestBody Issue issue) {
         return issueRepository.save(issue);
     }
 
     @PutMapping("/{id}")
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<Issue> updateIssueStatus(@PathVariable Long id, @RequestBody Issue updates) {
         return issueRepository.findById(id).map(issue -> {
             issue.setStatus(updates.getStatus());

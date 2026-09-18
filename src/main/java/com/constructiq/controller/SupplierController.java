@@ -13,7 +13,7 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/suppliers")
-@RequireRole({"procurement", "pm", "admin"})
+@RequireRole({"procurement", "inventory_manager", "pm", "admin"})
 @SuppressWarnings("null")
 public class SupplierController {
 

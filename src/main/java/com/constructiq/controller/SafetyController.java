@@ -22,11 +22,11 @@ public class SafetyController {
     }
 
     @PostMapping
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public Incident create(@RequestBody Incident incident) { return incidentRepository.save(incident); }
 
     @PutMapping("/{id}")
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<Incident> update(@PathVariable Long id, @RequestBody Incident updates) {
         return incidentRepository.findById(id).map(i -> {
             i.setStatus(updates.getStatus());
@@ -37,7 +37,7 @@ public class SafetyController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!incidentRepository.existsById(id)) return ResponseEntity.notFound().build();
         incidentRepository.deleteById(id);
