@@ -385,18 +385,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const projects = await api.get('/projects');
             const tbody = document.getElementById('finance-budgets-body');
             tbody.innerHTML = '';
-            projects.forEach(p => {
+            
+            let allBudgets = [];
+            for (const p of projects) {
+                const lines = await api.get('/budget/lines/project/' + p.id);
+                lines.forEach(l => {
+                    l.projectName = p.name;
+                    allBudgets.push(l);
+                });
+            }
+
+            if(allBudgets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No budget lines found.</td></tr>';
+                return;
+            }
+
+            allBudgets.forEach(b => {
                 const tr = document.createElement('tr');
+                const isOver = b.actualAmount > b.budgetedAmount;
+                const statusBadge = isOver ? '<span class="badge badge-warning">Over Budget</span>' : '<span class="badge badge-success">On Track</span>';
                 tr.innerHTML = `
-                    <td>${p.name}</td>
-                    <td>CC-${p.id || 'GEN'}</td>
-                    <td>General Construction</td>
-                    <td>$500,000.00</td>
-                    <td>$250,000.00</td>
-                    <td><span class="badge badge-success">On Budget</span></td>
+                    <td>Project ${b.projectId} - ${b.projectName}</td>
+                    <td>${b.costCode}</td>
+                    <td>${b.description || ''}</td>
+                    <td>$${b.budgetedAmount ? b.budgetedAmount.toFixed(2) : '0.00'}</td>
+                    <td>$${b.actualAmount ? b.actualAmount.toFixed(2) : '0.00'}</td>
+                    <td>${statusBadge}</td>
+                    <td data-requires-role="finance,admin">
+                        <button class="btn btn-secondary btn-sm" onclick="editBudget(${b.id}, ${b.projectId})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger-color)" onclick="deleteBudget(${b.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
+            applyRoleRestrictions();
         } catch (error) {
             console.error('Failed to load budgets', error);
         }
@@ -407,20 +429,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const invoices = await api.get('/finance/invoices');
             const tbody = document.getElementById('finance-invoices-body');
             tbody.innerHTML = '';
+            if(invoices.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No invoices found.</td></tr>';
+                return;
+            }
             invoices.forEach(inv => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${inv.invoiceNumber}</td>
                     <td>Project ${inv.projectId}</td>
-                    <td>$${inv.amount.toFixed(2)}</td>
-                    <td>${inv.dueDate}</td>
+                    <td>$${inv.amount ? inv.amount.toFixed(2) : '0.00'}</td>
+                    <td>${inv.dueDate ? inv.dueDate.split('T')[0] : ''}</td>
                     <td><span class="badge ${inv.status === 'Pending' ? 'badge-warning' : 'badge-success'}">${inv.status}</span></td>
-                    <td>
-                        ${inv.status === 'Pending' ? `<button class="btn btn-sm btn-primary" onclick="approveInvoice(${inv.id})">Approve</button>` : ''}
+                    <td data-requires-role="finance,admin">
+                        ${inv.status === 'Pending' ? `<button class="btn btn-sm btn-primary" style="margin-right:5px;" onclick="approveInvoice(${inv.id})">Approve</button>` : ''}
+                        <button class="btn btn-secondary btn-sm" onclick="editInvoice(${inv.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger-color)" onclick="deleteInvoice(${inv.id})"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
+            applyRoleRestrictions();
         } catch (error) {
             console.error('Failed to load invoices', error);
         }
@@ -431,18 +460,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const transactions = await api.get('/finance/transactions');
             const tbody = document.getElementById('finance-transactions-body');
             tbody.innerHTML = '';
-            transactions.forEach(tx => {
+            
+            const expenses = transactions.filter(t => t.type !== 'PAYROLL');
+            if(expenses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No transactions found.</td></tr>';
+                return;
+            }
+            
+            expenses.forEach(tx => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${tx.id}</td>
-                    <td>${new Date(tx.transactionDate).toLocaleDateString()}</td>
+                    <td>${tx.transactionDate ? tx.transactionDate.split('T')[0] : ''}</td>
                     <td>Project ${tx.projectId}</td>
                     <td>${tx.category}</td>
-                    <td>$${tx.amount.toFixed(2)}</td>
+                    <td>$${tx.amount ? tx.amount.toFixed(2) : '0.00'}</td>
                     <td>${tx.description || ''}</td>
+                    <td data-requires-role="finance,admin">
+                        <button class="btn btn-secondary btn-sm" onclick="editTransaction(${tx.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger-color)" onclick="deleteTransaction(${tx.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
+            applyRoleRestrictions();
         } catch (error) {
             console.error('Failed to load transactions', error);
         }
@@ -450,13 +491,149 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadPayroll() {
         try {
+            const transactions = await api.get('/finance/transactions');
             const tbody = document.getElementById('finance-payroll-body');
-            tbody.innerHTML = '<tr><td colspan="5">No payroll data yet.</td></tr>';
+            tbody.innerHTML = '';
+            
+            const payrolls = transactions.filter(t => t.type === 'PAYROLL');
+            if(payrolls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No payroll data found.</td></tr>';
+                return;
+            }
+            
+            payrolls.forEach(tx => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${tx.id}</td>
+                    <td>${tx.transactionDate ? tx.transactionDate.split('T')[0] : ''}</td>
+                    <td>Project ${tx.projectId}</td>
+                    <td>$${tx.amount ? tx.amount.toFixed(2) : '0.00'}</td>
+                    <td>${tx.description || ''}</td>
+                    <td data-requires-role="finance,admin">
+                        <button class="btn btn-secondary btn-sm" onclick="editTransaction(${tx.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger-color)" onclick="deleteTransaction(${tx.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            applyRoleRestrictions();
         } catch (error) {
             console.error('Failed to load payroll', error);
         }
     }
 
+    // Modal listeners & logic for Finance
+    const budgetModal = document.getElementById('budget-modal');
+    if(document.getElementById('btn-add-budget')) {
+        document.getElementById('btn-add-budget').addEventListener('click', () => {
+            document.getElementById('budget-form').reset();
+            document.getElementById('budget-id').value = '';
+            document.getElementById('budget-modal-title').textContent = 'Add Budget Line';
+            budgetModal.classList.remove('hidden');
+        });
+        document.getElementById('btn-close-budget-modal').addEventListener('click', () => budgetModal.classList.add('hidden'));
+        document.getElementById('btn-cancel-budget-modal').addEventListener('click', () => budgetModal.classList.add('hidden'));
+        
+        document.getElementById('budget-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('budget-id').value;
+            const data = {
+                projectId: document.getElementById('budget-project-id').value,
+                costCode: document.getElementById('budget-cost-code').value,
+                description: document.getElementById('budget-desc').value,
+                budgetedAmount: document.getElementById('budget-amount').value,
+                actualAmount: document.getElementById('budget-actual').value
+            };
+            try {
+                if(id) {
+                    await api.put('/budget/lines/' + id, data);
+                } else {
+                    await api.post('/budget/lines', data);
+                }
+                budgetModal.classList.add('hidden');
+                loadBudgets();
+            } catch(e) { alert('Error saving budget line'); }
+        });
+    }
+
+    window.editBudget = async (id, projectId) => {
+        try {
+            const lines = await api.get('/budget/lines/project/' + projectId);
+            const line = lines.find(l => l.id === id);
+            if(line) {
+                document.getElementById('budget-id').value = line.id;
+                document.getElementById('budget-project-id').value = line.projectId;
+                document.getElementById('budget-cost-code').value = line.costCode || '';
+                document.getElementById('budget-desc').value = line.description || '';
+                document.getElementById('budget-amount').value = line.budgetedAmount || 0;
+                document.getElementById('budget-actual').value = line.actualAmount || 0;
+                document.getElementById('budget-modal-title').textContent = 'Edit Budget Line';
+                budgetModal.classList.remove('hidden');
+            }
+        } catch(e) { console.error(e); }
+    };
+    window.deleteBudget = async (id) => {
+        if(confirm('Are you sure you want to delete this budget line?')) {
+            try { await api.delete('/budget/lines/' + id); loadBudgets(); } catch(e) { alert('Error deleting'); }
+        }
+    };
+
+    const invoiceModal = document.getElementById('invoice-modal');
+    if(document.getElementById('btn-add-invoice')) {
+        document.getElementById('btn-add-invoice').addEventListener('click', () => {
+            document.getElementById('invoice-form').reset();
+            document.getElementById('invoice-id').value = '';
+            document.getElementById('invoice-modal-title').textContent = 'Add Invoice';
+            invoiceModal.classList.remove('hidden');
+        });
+        document.getElementById('btn-close-invoice-modal').addEventListener('click', () => invoiceModal.classList.add('hidden'));
+        document.getElementById('btn-cancel-invoice-modal').addEventListener('click', () => invoiceModal.classList.add('hidden'));
+        
+        document.getElementById('invoice-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('invoice-id').value;
+            const data = {
+                invoiceNumber: document.getElementById('invoice-number').value,
+                projectId: document.getElementById('invoice-project-id').value,
+                supplierId: document.getElementById('invoice-supplier-id').value || null,
+                amount: document.getElementById('invoice-amount').value,
+                dueDate: document.getElementById('invoice-date').value,
+                status: document.getElementById('invoice-status').value
+            };
+            try {
+                if(id) {
+                    await api.put('/finance/invoices/' + id, data);
+                } else {
+                    await api.post('/finance/invoices', data);
+                }
+                invoiceModal.classList.add('hidden');
+                loadInvoices();
+            } catch(e) { alert('Error saving invoice'); }
+        });
+    }
+
+    window.editInvoice = async (id) => {
+        try {
+            const invoices = await api.get('/finance/invoices');
+            const inv = invoices.find(i => i.id === id);
+            if(inv) {
+                document.getElementById('invoice-id').value = inv.id;
+                document.getElementById('invoice-number').value = inv.invoiceNumber || '';
+                document.getElementById('invoice-project-id').value = inv.projectId;
+                document.getElementById('invoice-supplier-id').value = inv.supplierId || '';
+                document.getElementById('invoice-amount').value = inv.amount || 0;
+                if(inv.dueDate) document.getElementById('invoice-date').value = inv.dueDate.split('T')[0];
+                document.getElementById('invoice-status').value = inv.status || 'Pending';
+                document.getElementById('invoice-modal-title').textContent = 'Edit Invoice';
+                invoiceModal.classList.remove('hidden');
+            }
+        } catch(e) { console.error(e); }
+    };
+    window.deleteInvoice = async (id) => {
+        if(confirm('Are you sure you want to delete this invoice?')) {
+            try { await api.delete('/finance/invoices/' + id); loadInvoices(); } catch(e) { alert('Error deleting'); }
+        }
+    };
     window.approveInvoice = async function(id) {
         try {
             await api.put('/finance/invoices/' + id, { status: 'Approved' });
@@ -464,6 +641,72 @@ document.addEventListener('DOMContentLoaded', () => {
             loadInvoices();
         } catch (error) {
             showToast('Error', 'Could not approve invoice', 'error');
+        }
+    };
+
+    const transactionModal = document.getElementById('transaction-modal');
+    if(document.getElementById('btn-add-transaction')) {
+        document.getElementById('btn-add-transaction').addEventListener('click', () => {
+            document.getElementById('transaction-form').reset();
+            document.getElementById('transaction-id').value = '';
+            document.getElementById('transaction-type').value = 'EXPENSE';
+            document.getElementById('transaction-modal-title').textContent = 'Add Transaction';
+            transactionModal.classList.remove('hidden');
+        });
+        document.getElementById('btn-close-transaction-modal').addEventListener('click', () => transactionModal.classList.add('hidden'));
+        document.getElementById('btn-cancel-transaction-modal').addEventListener('click', () => transactionModal.classList.add('hidden'));
+        
+        document.getElementById('btn-add-payroll').addEventListener('click', () => {
+            document.getElementById('transaction-form').reset();
+            document.getElementById('transaction-id').value = '';
+            document.getElementById('transaction-type').value = 'PAYROLL';
+            document.getElementById('transaction-modal-title').textContent = 'Add Payroll Payment';
+            transactionModal.classList.remove('hidden');
+        });
+
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('transaction-id').value;
+            const data = {
+                projectId: document.getElementById('transaction-project-id').value,
+                transactionDate: document.getElementById('transaction-date').value,
+                type: document.getElementById('transaction-type').value,
+                category: document.getElementById('transaction-category').value,
+                amount: document.getElementById('transaction-amount').value,
+                description: document.getElementById('transaction-desc').value
+            };
+            try {
+                if(id) {
+                    await api.put('/finance/transactions/' + id, data);
+                } else {
+                    await api.post('/finance/transactions', data);
+                }
+                transactionModal.classList.add('hidden');
+                if(data.type === 'PAYROLL') loadPayroll(); else loadTransactions();
+            } catch(e) { alert('Error saving transaction'); }
+        });
+    }
+
+    window.editTransaction = async (id) => {
+        try {
+            const txs = await api.get('/finance/transactions');
+            const tx = txs.find(t => t.id === id);
+            if(tx) {
+                document.getElementById('transaction-id').value = tx.id;
+                document.getElementById('transaction-project-id').value = tx.projectId;
+                if(tx.transactionDate) document.getElementById('transaction-date').value = tx.transactionDate.split('T')[0];
+                document.getElementById('transaction-type').value = tx.type || 'EXPENSE';
+                document.getElementById('transaction-category').value = tx.category || '';
+                document.getElementById('transaction-amount').value = tx.amount || 0;
+                document.getElementById('transaction-desc').value = tx.description || '';
+                document.getElementById('transaction-modal-title').textContent = 'Edit Transaction';
+                transactionModal.classList.remove('hidden');
+            }
+        } catch(e) { console.error(e); }
+    };
+    window.deleteTransaction = async (id) => {
+        if(confirm('Are you sure you want to delete this transaction?')) {
+            try { await api.delete('/finance/transactions/' + id); loadTransactions(); loadPayroll(); } catch(e) { alert('Error deleting'); }
         }
     };
 
@@ -1081,10 +1324,20 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDocuments() {
         showLoading('documents', true);
         try {
-            documentsList = await api.get('/rfis');
+            const projects = await api.get('/projects');
+            let allDocs = [];
+            for (const p of projects) {
+                const docs = await api.get('/documents/project/' + p.id);
+                docs.forEach(d => {
+                    d.projectName = p.name;
+                    allDocs.push(d);
+                });
+            }
+            documentsList = allDocs;
             renderDocumentsTable();
         } catch (error) {
             showToast('Failed to load documents', error.message, 'error');
+            documentsList = [];
             renderDocumentsTable();
         } finally {
             showLoading('documents', false);
@@ -1100,22 +1353,62 @@ document.addEventListener('DOMContentLoaded', () => {
             documentsList.forEach(doc => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>
-                        <div style="font-weight: 600;">${doc.rfiNumber || ('RFI-' + doc.id)}</div>
-                        <div style="font-size: 12px; color: var(--text-secondary)">RFI</div>
+                    <td>${doc.id}</td>
+                    <td>Project ${doc.projectId} - ${doc.projectName}</td>
+                    <td>${doc.fileName}</td>
+                    <td>${doc.fileType || ''}</td>
+                    <td><a href="${doc.fileUrl}" target="_blank" style="color:var(--primary-color);">View <i class="fa-solid fa-external-link"></i></a></td>
+                    <td>User ${doc.uploadedByUserId}</td>
+                    <td>${doc.createdAt ? doc.createdAt.split('T')[0] : ''}</td>
+                    <td data-requires-role="admin">
+                        <button class="btn btn-secondary btn-sm" style="color:var(--danger-color)" onclick="deleteDocument(${doc.id})"><i class="fa-solid fa-trash"></i></button>
                     </td>
-                    <td>${doc.subject}</td>
-                    <td>
-                        <span class="status-badge status-${(doc.status || 'open').toLowerCase().replace(' ', '-')}">
-                            ${doc.status || 'Open'}
-                        </span>
-                    </td>
-                    <td>${doc.submittedDate || 'N/A'}</td>
                 `;
                 documentsTableBody.appendChild(tr);
             });
+            applyRoleRestrictions();
         }
     }
+
+    // Modal listeners & logic for Documents
+    const documentModal = document.getElementById('document-modal');
+    if(document.getElementById('btn-add-document')) {
+        document.getElementById('btn-add-document').addEventListener('click', () => {
+            document.getElementById('document-form').reset();
+            document.getElementById('document-id').value = '';
+            document.getElementById('document-modal-title').textContent = 'Upload Document';
+            documentModal.classList.remove('hidden');
+        });
+        document.getElementById('btn-close-document-modal').addEventListener('click', () => documentModal.classList.add('hidden'));
+        document.getElementById('btn-cancel-document-modal').addEventListener('click', () => documentModal.classList.add('hidden'));
+        
+        document.getElementById('document-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('document-id').value;
+            const data = {
+                projectId: document.getElementById('document-project-id').value,
+                fileName: document.getElementById('document-file-name').value,
+                fileType: document.getElementById('document-file-type').value,
+                fileUrl: document.getElementById('document-file-url').value,
+                uploadedByUserId: document.getElementById('document-uploaded-by').value
+            };
+            try {
+                if(id) {
+                    await api.put('/documents/' + id, data);
+                } else {
+                    await api.post('/documents', data);
+                }
+                documentModal.classList.add('hidden');
+                loadDocuments();
+            } catch(err) { alert('Error saving document'); }
+        });
+    }
+
+    window.deleteDocument = async (id) => {
+        if(confirm('Are you sure you want to delete this document?')) {
+            try { await api.delete('/documents/' + id); loadDocuments(); } catch(err) { alert('Error deleting document'); }
+        }
+    };
 
     // ── Functions: Analytics ──
     let budgetChartInstance = null;
