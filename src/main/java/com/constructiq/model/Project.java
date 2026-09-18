@@ -38,6 +38,12 @@ public class Project {
     @Column(precision = 18, scale = 2)
     private java.math.BigDecimal budget;
 
+    @Column(name = "client_id")
+    private Long clientId;
+
+    @Column(name = "client_name")
+    private String clientName;
+
     public Project() {
     }
 
@@ -113,5 +119,21 @@ public class Project {
 
     public void setBudget(java.math.BigDecimal budget) {
         this.budget = budget;
+    }
+
+    public Long getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(Long clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getClientName() {
+        return clientName;
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
     }
 }

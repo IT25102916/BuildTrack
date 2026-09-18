@@ -40,6 +40,18 @@ public class ProjectService {
         project.setStartDate(projectDetails.getStartDate());
         project.setEndDate(projectDetails.getEndDate());
         project.setStatus(projectDetails.getStatus());
+        if (projectDetails.getType() != null) {
+            project.setType(projectDetails.getType());
+        }
+        if (projectDetails.getBudget() != null) {
+            project.setBudget(projectDetails.getBudget());
+        }
+        if (projectDetails.getClientId() != null) {
+            project.setClientId(projectDetails.getClientId());
+        }
+        if (projectDetails.getClientName() != null) {
+            project.setClientName(projectDetails.getClientName());
+        }
         
         return projectRepository.save(project);
     }

@@ -19,36 +19,22 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (userRepository.count() == 0) {
-            User admin = new User();
-            admin.setName("Admin User");
-            admin.setEmail("admin@constructiq.com");
-            admin.setRole("Admin");
-            admin.setPasswordHash("admin");
-            admin.setAvatarInitials("AU");
-            
-            User pm = new User();
-            pm.setName("Project Manager");
-            pm.setEmail("pm@constructiq.com");
-            pm.setRole("Project Manager");
-            pm.setPasswordHash("pm");
-            pm.setAvatarInitials("PM");
-            
-            User fe = new User();
-            fe.setName("Finance Executive");
-            fe.setEmail("finance@constructiq.com");
-            fe.setRole("Finance Executive");
-            fe.setPasswordHash("demo");
-            fe.setAvatarInitials("FE");
+        seedUser("admin@constructiq.com", "Admin User", "admin", "demo", "AD");
+        seedUser("pm@constructiq.com", "Project Manager", "pm", "demo", "PM");
+        seedUser("supervisor@constructiq.com", "Site Supervisor", "supervisor", "demo", "SS");
+        seedUser("finance@constructiq.com", "Finance Team", "finance", "demo", "FI");
+        seedUser("procurement@constructiq.com", "Procurement", "procurement", "demo", "PR");
+        seedUser("client@constructiq.com", "Client", "client", "demo", "CL");
+    }
 
-            User inv = new User();
-            inv.setName("Inventory Supervisor");
-            inv.setEmail("inventory@constructiq.com");
-            inv.setRole("Inventory Supervisor");
-            inv.setPasswordHash("demo");
-            inv.setAvatarInitials("IS");
-
-            userRepository.saveAll(List.of(admin, pm, fe, inv));
-        }
+    private void seedUser(String email, String name, String role, String password, String avatarInitials) {
+        User user = userRepository.findByEmail(email).orElseGet(User::new);
+        user.setEmail(email);
+        user.setName(name);
+        user.setRole(role);
+        user.setPasswordHash(password);
+        user.setAvatarInitials(avatarInitials);
+        user.setActive(true);
+        userRepository.save(user);
     }
 }
