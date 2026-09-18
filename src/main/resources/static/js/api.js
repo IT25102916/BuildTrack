@@ -47,8 +47,8 @@ async function fetchClient(endpoint, options = {}) {
         const data = await response.json().catch(() => null);
 
         if (!response.ok) {
-            // This maps to our Spring Boot ErrorResponse record
-            const errorMsg = data?.message || 'An unexpected error occurred';
+            // This maps to our Spring Boot ErrorResponse record or custom error map
+            const errorMsg = data?.error || data?.message || 'An unexpected error occurred';
             let details = null;
             
             // If it's a validation error (400), Spring sends field errors in the message string usually,

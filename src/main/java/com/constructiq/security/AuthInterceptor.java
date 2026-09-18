@@ -71,7 +71,13 @@ public class AuthInterceptor implements HandlerInterceptor {
         // Check if the user's role is in the allowed roles
         boolean isAuthorized = Arrays.stream(allowedRoles)
                 .map(String::toLowerCase)
-                .anyMatch(role -> role.equals(userRole));
+                .anyMatch(role -> role.equals(userRole)
+                        || (role.equals("pm") && userRole.contains("pm"))
+                        || (role.equals("pm") && userRole.contains("project manager"))
+                        || (role.equals("finance") && userRole.contains("finance"))
+                        || (role.equals("procurement") && userRole.contains("procurement"))
+                        || (role.equals("supervisor") && userRole.contains("supervisor"))
+                        || (role.equals("client") && userRole.contains("client")));
 
         if (!isAuthorized) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden - Insufficient permissions");

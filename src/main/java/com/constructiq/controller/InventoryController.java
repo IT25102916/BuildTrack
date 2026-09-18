@@ -34,7 +34,7 @@ public class InventoryController {
 
     @GetMapping("/items")
     public List<InventoryItem> getAllItems() {
-        return itemRepo.findByIsActiveTrue();
+        return itemRepo.findByActiveTrue();
     }
 
     @PostMapping("/items")
@@ -175,7 +175,7 @@ public class InventoryController {
     @GetMapping("/low-stock")
     public List<InventoryItem> getLowStockItems() {
         // Returns items where quantityOnHand <= reorderLevel (and reorderLevel > 0)
-        return itemRepo.findByIsActiveTrue().stream()
+        return itemRepo.findByActiveTrue().stream()
             .filter(i -> i.getReorderLevel().compareTo(BigDecimal.ZERO) > 0
                       && i.getQuantityOnHand().compareTo(i.getReorderLevel()) <= 0)
             .toList();

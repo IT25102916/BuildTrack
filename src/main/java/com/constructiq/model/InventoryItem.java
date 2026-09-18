@@ -37,7 +37,7 @@ public class InventoryItem {
     private Long supplierId;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -45,7 +45,7 @@ public class InventoryItem {
     public InventoryItem() {
     }
 
-    public InventoryItem(Long id, String name, String description, String unit, String category, BigDecimal quantityOnHand, BigDecimal reorderLevel, BigDecimal unitCost, Long supplierId, boolean isActive, LocalDateTime createdAt) {
+    public InventoryItem(Long id, String name, String description, String unit, String category, BigDecimal quantityOnHand, BigDecimal reorderLevel, BigDecimal unitCost, Long supplierId, boolean active, LocalDateTime createdAt) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -55,7 +55,7 @@ public class InventoryItem {
         this.reorderLevel = reorderLevel;
         this.unitCost = unitCost;
         this.supplierId = supplierId;
-        this.isActive = isActive;
+        this.active = active;
         this.createdAt = createdAt;
     }
 
@@ -132,11 +132,11 @@ public class InventoryItem {
     }
 
     public boolean isActive() {
-        return isActive;
+        return active;
     }
 
-    public void setActive(boolean isActive) {
-        this.isActive = isActive;
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public LocalDateTime getCreatedAt() {

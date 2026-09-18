@@ -6,6 +6,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
-    List<InventoryItem> findByIsActiveTrue();
+    List<InventoryItem> findByActiveTrue();
     List<InventoryItem> findByQuantityOnHandLessThanEqual(BigDecimal threshold);
 }

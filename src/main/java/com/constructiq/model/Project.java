@@ -38,6 +38,39 @@ public class Project {
     @Column(precision = 18, scale = 2)
     private java.math.BigDecimal budget;
 
+    @Column(name = "client_id")
+    private Long clientId;
+
+    @Column(name = "client_name")
+    private String clientName;
+
+    @Column(name = "contract_value", precision = 18, scale = 2)
+    private java.math.BigDecimal contractValue = java.math.BigDecimal.ZERO;
+
+    @Column(name = "approved_budget", precision = 18, scale = 2)
+    private java.math.BigDecimal approvedBudget = java.math.BigDecimal.ZERO;
+
+    @Column(name = "percent_complete")
+    private int percentComplete = 0;
+
+    @Column(name = "budget_health", length = 20)
+    private String budgetHealth = "good";
+
+    @Column(name = "manpower_today")
+    private int manpowerToday = 0;
+
+    @Column(name = "open_rfis")
+    private int openRfis = 0;
+
+    @Column(name = "open_punch")
+    private int openPunch = 0;
+
+    @Column(length = 10)
+    private String color = "#00d4b4";
+
+    @Column(name = "created_at", updatable = false)
+    private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
+
     public Project() {
     }
 
@@ -113,5 +146,93 @@ public class Project {
 
     public void setBudget(java.math.BigDecimal budget) {
         this.budget = budget;
+    }
+
+    public Long getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(Long clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getClientName() {
+        return clientName;
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
+
+    public java.math.BigDecimal getContractValue() {
+        return contractValue;
+    }
+
+    public void setContractValue(java.math.BigDecimal contractValue) {
+        this.contractValue = contractValue;
+    }
+
+    public java.math.BigDecimal getApprovedBudget() {
+        return approvedBudget;
+    }
+
+    public void setApprovedBudget(java.math.BigDecimal approvedBudget) {
+        this.approvedBudget = approvedBudget;
+    }
+
+    public int getPercentComplete() {
+        return percentComplete;
+    }
+
+    public void setPercentComplete(int percentComplete) {
+        this.percentComplete = percentComplete;
+    }
+
+    public String getBudgetHealth() {
+        return budgetHealth;
+    }
+
+    public void setBudgetHealth(String budgetHealth) {
+        this.budgetHealth = budgetHealth;
+    }
+
+    public int getManpowerToday() {
+        return manpowerToday;
+    }
+
+    public void setManpowerToday(int manpowerToday) {
+        this.manpowerToday = manpowerToday;
+    }
+
+    public int getOpenRfis() {
+        return openRfis;
+    }
+
+    public void setOpenRfis(int openRfis) {
+        this.openRfis = openRfis;
+    }
+
+    public int getOpenPunch() {
+        return openPunch;
+    }
+
+    public void setOpenPunch(int openPunch) {
+        this.openPunch = openPunch;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public java.time.LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.time.LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
