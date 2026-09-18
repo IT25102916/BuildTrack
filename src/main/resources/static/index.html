@@ -251,6 +251,7 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Name</th>
                                     <th>Contact</th>
                                     <th>Phone</th>
@@ -276,6 +277,7 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Name</th>
                                     <th>Contact</th>
                                     <th>Phone</th>
@@ -856,9 +858,15 @@
             </div>
             <form id="subcontractor-form">
                 <input type="hidden" id="subcontractor-id">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="subcontractor-name" required>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 0 0 130px;">
+                        <label>ID <small style="color:var(--text-secondary);">(Optional)</small></label>
+                        <input type="number" id="subcontractor-id-input" placeholder="Auto" min="1">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Name <span style="color:var(--error-color);">*</span></label>
+                        <input type="text" id="subcontractor-name" required placeholder="Subcontractor name">
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -911,9 +919,15 @@
             </div>
             <form id="supplier-form">
                 <input type="hidden" id="supplier-id">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="supplier-name" required>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 0 0 130px;">
+                        <label>ID <small style="color:var(--text-secondary);">(Optional)</small></label>
+                        <input type="number" id="supplier-id-input" placeholder="Auto" min="1">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Name <span style="color:var(--error-color);">*</span></label>
+                        <input type="text" id="supplier-name" required placeholder="Supplier name">
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -1188,6 +1202,6 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/api.js"></script>
-    <script src="/js/app.js?v=5"></script>
+    <script src="/js/app.js?v=6"></script>
 </body>
 </html>

@@ -178,6 +178,20 @@ body {
     font-weight: bold;
 }
 
+.id-tag {
+    display: inline-block;
+    position: static;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-family: monospace;
+    font-size: 13px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    white-space: nowrap;
+    text-align: center;
+}
+
 .avatar {
     width: 36px;
     height: 36px;
@@ -406,7 +420,7 @@ label {
 
 .required { color: var(--error-color); }
 
-input[type="text"], input[type="date"], input[type="email"], input[type="password"], select {
+input[type="text"], input[type="date"], input[type="email"], input[type="password"], input[type="number"], select {
     width: 100%;
     padding: 10px 12px;
     background-color: var(--bg-surface);
@@ -416,6 +430,12 @@ input[type="text"], input[type="date"], input[type="email"], input[type="passwor
     font-family: inherit;
     font-size: 14px;
     transition: border-color 0.2s;
+}
+
+input:disabled, select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 input:focus, select:focus {

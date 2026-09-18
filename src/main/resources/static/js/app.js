@@ -908,7 +908,7 @@ document.addEventListener('DOMContentLoaded', () => {
             suppliers.forEach(sup => {
                 const opt = document.createElement('option');
                 opt.value = sup.id;
-                opt.textContent = sup.name;
+                opt.textContent = `#${sup.id} - ${sup.name}`;
                 sel.appendChild(opt);
             });
         } catch (error) {
@@ -1670,6 +1670,7 @@ document.addEventListener('DOMContentLoaded', () => {
             subs.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td><span class="id-tag">#${s.id}</span></td>
                     <td>${s.name}</td>
                     <td>${s.contactName || ''}</td>
                     <td>${s.phone || ''}</td>
@@ -1693,6 +1694,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btn-add-subcontractor').addEventListener('click', () => {
             document.getElementById('subcontractor-form').reset();
             document.getElementById('subcontractor-id').value = '';
+            const idInput = document.getElementById('subcontractor-id-input');
+            if(idInput) {
+                idInput.value = '';
+                idInput.disabled = false;
+            }
             document.getElementById('subcontractor-modal-title').textContent = 'Add Subcontractor';
             subcontractorModal.classList.remove('hidden');
         });
@@ -1707,6 +1713,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('subcontractor-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('subcontractor-id').value;
+            const customId = document.getElementById('subcontractor-id-input')?.value?.trim();
             const data = {
                 name: document.getElementById('subcontractor-name').value,
                 contactName: document.getElementById('subcontractor-contact').value,
@@ -1716,6 +1723,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 insuranceExpiry: document.getElementById('subcontractor-insurance').value,
                 status: document.getElementById('subcontractor-status').value
             };
+            if(!id && customId) {
+                data.id = parseInt(customId, 10);
+            }
             try {
                 if(id) {
                     await api.put('/suppliers/subcontractors/' + id, data);
@@ -1725,7 +1735,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 subcontractorModal.classList.add('hidden');
                 loadSubcontractors();
             } catch(error) {
-                alert('Error saving subcontractor');
+                alert(error.message || 'Error saving subcontractor');
             }
         });
     }
@@ -1736,6 +1746,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const sub = subs.find(s => s.id === id);
             if(sub) {
                 document.getElementById('subcontractor-id').value = sub.id;
+                const idInput = document.getElementById('subcontractor-id-input');
+                if(idInput) {
+                    idInput.value = sub.id;
+                    idInput.disabled = true;
+                }
                 document.getElementById('subcontractor-name').value = sub.name;
                 document.getElementById('subcontractor-contact').value = sub.contactName || '';
                 document.getElementById('subcontractor-phone').value = sub.phone || '';
@@ -1745,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('subcontractor-insurance').value = sub.insuranceExpiry.split('T')[0];
                 }
                 document.getElementById('subcontractor-status').value = sub.status || 'Active';
-                document.getElementById('subcontractor-modal-title').textContent = 'Edit Subcontractor';
+                document.getElementById('subcontractor-modal-title').textContent = `Edit Subcontractor (ID: #${sub.id})`;
                 subcontractorModal.classList.remove('hidden');
             }
         } catch(e) { console.error(e); }
@@ -1772,6 +1787,7 @@ document.addEventListener('DOMContentLoaded', () => {
             suppliers.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td><span class="id-tag">#${s.id}</span></td>
                     <td>${s.name} ${!s.active ? '<span class="status-badge status-inactive">Inactive</span>' : ''}</td>
                     <td>${s.contactName || ''}</td>
                     <td>${s.phone || ''}</td>
@@ -1795,6 +1811,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btn-add-supplier').addEventListener('click', () => {
             document.getElementById('supplier-form').reset();
             document.getElementById('supplier-id').value = '';
+            const idInput = document.getElementById('supplier-id-input');
+            if(idInput) {
+                idInput.value = '';
+                idInput.disabled = false;
+            }
             document.getElementById('supplier-active').checked = true;
             document.getElementById('supplier-modal-title').textContent = 'Add Supplier';
             supplierModal.classList.remove('hidden');
@@ -1810,6 +1831,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('supplier-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('supplier-id').value;
+            const customId = document.getElementById('supplier-id-input')?.value?.trim();
             const data = {
                 name: document.getElementById('supplier-name').value,
                 contactName: document.getElementById('supplier-contact').value,
@@ -1818,6 +1840,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 type: document.getElementById('supplier-type').value,
                 active: document.getElementById('supplier-active').checked
             };
+            if(!id && customId) {
+                data.id = parseInt(customId, 10);
+            }
             try {
                 if(id) {
                     await api.put('/suppliers/' + id, data);
@@ -1827,7 +1852,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 supplierModal.classList.add('hidden');
                 loadSuppliers();
             } catch(error) {
-                alert('Error saving supplier');
+                alert(error.message || 'Error saving supplier');
             }
         });
     }
@@ -1838,13 +1863,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const sub = suppliers.find(s => s.id === id);
             if(sub) {
                 document.getElementById('supplier-id').value = sub.id;
+                const idInput = document.getElementById('supplier-id-input');
+                if(idInput) {
+                    idInput.value = sub.id;
+                    idInput.disabled = true;
+                }
                 document.getElementById('supplier-name').value = sub.name;
                 document.getElementById('supplier-contact').value = sub.contactName || '';
                 document.getElementById('supplier-phone').value = sub.phone || '';
                 document.getElementById('supplier-email').value = sub.email || '';
                 document.getElementById('supplier-type').value = sub.type || '';
                 document.getElementById('supplier-active').checked = sub.active;
-                document.getElementById('supplier-modal-title').textContent = 'Edit Supplier';
+                document.getElementById('supplier-modal-title').textContent = `Edit Supplier (ID: #${sub.id})`;
                 supplierModal.classList.remove('hidden');
             }
         } catch(e) { console.error(e); }
