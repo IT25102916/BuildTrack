@@ -19,21 +19,46 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        seedUser("Admin User", "admin@constructiq.com", "Admin", "AU", "demo");
-        seedUser("Project Manager", "pm@constructiq.com", "PM", "PM", "demo");
-        seedUser("Site Supervisor", "supervisor@constructiq.com", "Supervisor", "SS", "demo");
-        seedUser("Finance Executive", "finance@constructiq.com", "Finance", "FE", "demo");
-        seedUser("Procurement Specialist", "procurement@constructiq.com", "Procurement", "PR", "demo");
-        seedUser("Client Representative", "client@constructiq.com", "Client", "CL", "demo");
+        // List of unwanted legacy/duplicate account emails to remove
+        List<String> unwantedEmails = List.of(
+            "admin_officer@constructiq.com",
+            "finance_exec@constructiq.com",
+            "inventory_sup@constructiq.com",
+            "procurement_off@constructiq.com",
+            "jdoe@example.com",
+            "client@example.com"
+        );
+
+        for (String email : unwantedEmails) {
+            userRepository.findByEmail(email).ifPresent(user -> {
+                try {
+                    userRepository.delete(user);
+                } catch (Exception ignored) {
+                    // Ignore if foreign keys prevent deletion
+                }
+            });
+        }
+
+        // Ensure standard user accounts exist with password 'demo'
+        seedUser("Alexander Vance", "admin@constructiq.com", "admin", "AV", "+1 (555) 010-1001");
+        seedUser("Marcus Brody", "pm@constructiq.com", "pm", "MB", "+1 (555) 010-1002");
+        seedUser("Elena Rostova", "site_eng@constructiq.com", "site_engineer", "ER", "+1 (555) 010-1003");
+        seedUser("Sarah Jenkins", "finance@constructiq.com", "finance", "SJ", "+1 (555) 010-1004");
+        seedUser("David Chen", "procurement@constructiq.com", "procurement", "DC", "+1 (555) 010-1005");
+        seedUser("Carlos Mendez", "inventory@constructiq.com", "inventory_manager", "CM", "+1 (555) 010-1006");
+        seedUser("Site Supervisor", "supervisor@constructiq.com", "supervisor", "SS", "+1 (555) 010-1009");
+        seedUser("Liam O'Connor", "subcontractor@constructiq.com", "subcontractor", "LO", "+1 (555) 010-1007");
+        seedUser("Victoria Sterling", "client@constructiq.com", "client", "VS", "+1 (555) 010-1008");
     }
 
-    private void seedUser(String name, String email, String role, String initials, String password) {
-        User user = userRepository.findByEmail(email).orElse(new User());
+    private void seedUser(String name, String email, String role, String avatar, String phone) {
+        User user = userRepository.findByEmail(email).orElseGet(User::new);
         user.setName(name);
         user.setEmail(email);
         user.setRole(role);
-        user.setAvatarInitials(initials);
-        user.setPasswordHash(password);
+        user.setPasswordHash("demo");
+        user.setAvatarInitials(avatar);
+        user.setPhone(phone);
         user.setActive(true);
         userRepository.save(user);
     }

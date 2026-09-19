@@ -1,0 +1,1 @@
+UPDATE constructiqdb.dbo.users SET role = 'site_engineer' WHERE email = 'site_eng@constructiq.com'; UPDATE constructiqdb.dbo.users SET role = 'inventory_manager' WHERE email = 'inventory@constructiq.com';

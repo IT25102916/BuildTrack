@@ -29,7 +29,7 @@ public class AttendanceController {
     }
 
     @PostMapping("/clock-in")
-    @RequireRole({"admin", "supervisor", "pm"})
+    @RequireRole({"admin", "site_engineer", "pm"})
     public ResponseEntity<Attendance> clockIn(@RequestBody Attendance attendance) {
         attendance.setWorkDate(LocalDate.now());
         attendance.setClockIn(LocalDateTime.now());
@@ -38,7 +38,7 @@ public class AttendanceController {
     }
 
     @PutMapping("/{id}/clock-out")
-    @RequireRole({"admin", "supervisor", "pm"})
+    @RequireRole({"admin", "site_engineer", "pm"})
     public ResponseEntity<Attendance> clockOut(@PathVariable Long id) {
         return attendanceRepository.findById(id).map(a -> {
             a.setClockOut(LocalDateTime.now());

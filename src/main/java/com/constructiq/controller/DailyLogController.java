@@ -28,11 +28,11 @@ public class DailyLogController {
     }
 
     @PostMapping
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public DailyLog create(@RequestBody DailyLog log) { return dailyLogRepository.save(log); }
 
     @PutMapping("/{id}")
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<DailyLog> update(@PathVariable Long id, @RequestBody DailyLog updates) {
         return dailyLogRepository.findById(id).map(l -> {
             l.setWeather(updates.getWeather());
@@ -48,7 +48,7 @@ public class DailyLogController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!dailyLogRepository.existsById(id)) return ResponseEntity.notFound().build();
         dailyLogRepository.deleteById(id);

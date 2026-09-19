@@ -23,11 +23,11 @@ public class PunchController {
     }
 
     @PostMapping
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public PunchItem create(@RequestBody PunchItem item) { return punchItemRepository.save(item); }
 
     @PutMapping("/{id}")
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<PunchItem> update(@PathVariable Long id, @RequestBody PunchItem updates) {
         return punchItemRepository.findById(id).map(p -> {
             p.setStatus(updates.getStatus());
@@ -41,7 +41,7 @@ public class PunchController {
     }
 
     @DeleteMapping("/{id}")
-    @RequireRole({"supervisor", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!punchItemRepository.existsById(id)) return ResponseEntity.notFound().build();
         punchItemRepository.deleteById(id);
