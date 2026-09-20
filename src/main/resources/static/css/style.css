@@ -420,7 +420,7 @@ label {
 
 .required { color: var(--error-color); }
 
-input[type="text"], input[type="date"], input[type="email"], input[type="password"], input[type="number"], select {
+input[type="text"], input[type="date"], input[type="email"], input[type="password"], input[type="number"], select, textarea {
     width: 100%;
     padding: 10px 12px;
     background-color: var(--bg-surface);
@@ -430,6 +430,11 @@ input[type="text"], input[type="date"], input[type="email"], input[type="passwor
     font-family: inherit;
     font-size: 14px;
     transition: border-color 0.2s;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
 }
 
 input:disabled, select:disabled {
@@ -517,4 +522,38 @@ input:focus, select:focus {
 @keyframes slideInRight {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
+}
+
+/* ── Status Badges & Progress Bars ── */
+.status-open, .status-pending { background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.status-in_progress, .status-in-progress, .status-ready_review, .status-ready-for-review, .status-responded { background-color: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.status-completed, .status-closed, .status-resolved, .status-approved, .status-signed { background-color: rgba(16, 185, 129, 0.2); color: #34d399; }
+.status-rejected, .status-high, .status-critical { background-color: rgba(239, 68, 68, 0.2); color: #f87171; }
+.status-low { background-color: rgba(56, 189, 248, 0.2); color: #7dd3fc; }
+.status-medium { background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.status-unsigned { background-color: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+
+.progress-bar-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    height: 8px;
+    width: 90px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+.progress-bar-fill {
+    background: var(--accent-primary);
+    height: 100%;
+    border-radius: 9999px;
+}
+.stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
 }

@@ -16,6 +16,11 @@ public class SafetyController {
 
     @Autowired private IncidentRepository incidentRepository;
 
+    @GetMapping
+    public List<Incident> getAll() {
+        return incidentRepository.findAll();
+    }
+
     @GetMapping("/project/{projectId}")
     public List<Incident> getByProject(@PathVariable Long projectId) {
         return incidentRepository.findByProjectIdOrderByIncidentDateDesc(projectId);
@@ -29,9 +34,11 @@ public class SafetyController {
     @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<Incident> update(@PathVariable Long id, @RequestBody Incident updates) {
         return incidentRepository.findById(id).map(i -> {
-            i.setStatus(updates.getStatus());
-            i.setActionTaken(updates.getActionTaken());
-            i.setSeverity(updates.getSeverity());
+            if (updates.getIncidentDate() != null) i.setIncidentDate(updates.getIncidentDate());
+            if (updates.getDescription() != null) i.setDescription(updates.getDescription());
+            if (updates.getStatus() != null) i.setStatus(updates.getStatus());
+            if (updates.getActionTaken() != null) i.setActionTaken(updates.getActionTaken());
+            if (updates.getSeverity() != null) i.setSeverity(updates.getSeverity());
             return ResponseEntity.ok(incidentRepository.save(i));
         }).orElse(ResponseEntity.notFound().build());
     }

@@ -17,6 +17,11 @@ public class PunchController {
 
     @Autowired private PunchItemRepository punchItemRepository;
 
+    @GetMapping
+    public List<PunchItem> getAll() {
+        return punchItemRepository.findAll();
+    }
+
     @GetMapping("/project/{projectId}")
     public List<PunchItem> getByProject(@PathVariable Long projectId) {
         return punchItemRepository.findByProjectIdOrderByOpenedDateDesc(projectId);
@@ -30,9 +35,11 @@ public class PunchController {
     @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<PunchItem> update(@PathVariable Long id, @RequestBody PunchItem updates) {
         return punchItemRepository.findById(id).map(p -> {
-            p.setStatus(updates.getStatus());
-            p.setResponsibleParty(updates.getResponsibleParty());
-            p.setDueDate(updates.getDueDate());
+            if (updates.getLocation() != null) p.setLocation(updates.getLocation());
+            if (updates.getDescription() != null) p.setDescription(updates.getDescription());
+            if (updates.getStatus() != null) p.setStatus(updates.getStatus());
+            if (updates.getResponsibleParty() != null) p.setResponsibleParty(updates.getResponsibleParty());
+            if (updates.getDueDate() != null) p.setDueDate(updates.getDueDate());
             if ("closed".equals(updates.getStatus()) && p.getClosedDate() == null) {
                 p.setClosedDate(LocalDate.now());
             }
