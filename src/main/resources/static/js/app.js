@@ -2023,6 +2023,88 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🚀 NEW MODULES: Tasks, Daily Logs, Punch List, Safety, RFIs & Submittals
     // ══════════════════════════════════════════════════════════════════════
 
+    // ── Module State & DOM Elements ──
+    let allTasks = [];
+    let allDailyLogs = [];
+    let allPunchItems = [];
+    let allSafetyIncidents = [];
+    let allRfis = [];
+    let allSubmittals = [];
+    let punchCurrentFilter = 'all';
+
+    // Tasks DOM
+    const tasksProjectFilter = document.getElementById('tasks-project-filter');
+    const tasksTableBody = document.getElementById('tasks-table-body');
+    const loadingTasks = document.getElementById('loading-spinner-tasks');
+    const emptyTasks = document.getElementById('empty-state-tasks');
+    const btnAddTask = document.getElementById('btn-add-task');
+    const taskModal = document.getElementById('task-modal');
+    const btnCloseTaskModal = document.getElementById('btn-close-task-modal');
+    const btnCancelTaskModal = document.getElementById('btn-cancel-task-modal');
+    const taskForm = document.getElementById('task-form');
+
+    // Daily Logs DOM
+    const dailyLogsProjectFilter = document.getElementById('daily-logs-project-filter');
+    const dailyLogsTableBody = document.getElementById('daily-logs-table-body');
+    const loadingDailyLogs = document.getElementById('loading-spinner-daily-logs');
+    const emptyDailyLogs = document.getElementById('empty-state-daily-logs');
+    const btnAddDailyLog = document.getElementById('btn-add-daily-log');
+    const dailyLogModal = document.getElementById('daily-log-modal');
+    const btnCloseDailyLogModal = document.getElementById('btn-close-daily-log-modal');
+    const btnCancelDailyLogModal = document.getElementById('btn-cancel-daily-log-modal');
+    const dailyLogForm = document.getElementById('daily-log-form');
+
+    // Punch List DOM
+    const punchProjectFilter = document.getElementById('punch-project-filter');
+    const punchTableBody = document.getElementById('punch-table-body');
+    const loadingPunch = document.getElementById('loading-spinner-punch');
+    const emptyPunch = document.getElementById('empty-state-punch');
+    const btnAddPunch = document.getElementById('btn-add-punch');
+    const punchModal = document.getElementById('punch-modal');
+    const btnClosePunchModal = document.getElementById('btn-close-punch-modal');
+    const btnCancelPunchModal = document.getElementById('btn-cancel-punch-modal');
+    const punchForm = document.getElementById('punch-form');
+
+    // Safety DOM
+    const safetyProjectFilter = document.getElementById('safety-project-filter');
+    const safetyTableBody = document.getElementById('safety-table-body');
+    const loadingSafety = document.getElementById('loading-spinner-safety');
+    const emptySafety = document.getElementById('empty-state-safety');
+    const btnAddSafety = document.getElementById('btn-add-safety');
+    const safetyModal = document.getElementById('safety-modal');
+    const btnCloseSafetyModal = document.getElementById('btn-close-safety-modal');
+    const btnCancelSafetyModal = document.getElementById('btn-cancel-safety-modal');
+    const safetyForm = document.getElementById('safety-form');
+
+    // RFIs & Submittals DOM
+    const rfisProjectFilter = document.getElementById('rfis-project-filter');
+    const btnTabRfis = document.getElementById('btn-tab-rfis');
+    const btnTabSubmittals = document.getElementById('btn-tab-submittals');
+    const rfisSubview = document.getElementById('rfis-subview');
+    const submittalsSubview = document.getElementById('submittals-subview');
+    const rfisTableBody = document.getElementById('rfis-table-body');
+    const loadingRfis = document.getElementById('loading-spinner-rfis');
+    const emptyRfis = document.getElementById('empty-state-rfis');
+    const btnAddRfi = document.getElementById('btn-add-rfi');
+    const rfiModal = document.getElementById('rfi-modal');
+    const btnCloseRfiModal = document.getElementById('btn-close-rfi-modal');
+    const btnCancelRfiModal = document.getElementById('btn-cancel-rfi-modal');
+    const rfiForm = document.getElementById('rfi-form');
+    const rfiResponseModal = document.getElementById('rfi-response-modal');
+    const btnCloseRfiResponseModal = document.getElementById('btn-close-rfi-response-modal');
+    const btnCancelRfiResponseModal = document.getElementById('btn-cancel-rfi-response-modal');
+    const rfiResponseForm = document.getElementById('rfi-response-form');
+
+    // Submittals DOM
+    const submittalsTableBody = document.getElementById('submittals-table-body');
+    const loadingSubmittals = document.getElementById('loading-spinner-submittals');
+    const emptySubmittals = document.getElementById('empty-state-submittals');
+    const btnAddSubmittal = document.getElementById('btn-add-submittal');
+    const submittalModal = document.getElementById('submittal-modal');
+    const btnCloseSubmittalModal = document.getElementById('btn-close-submittal-modal');
+    const btnCancelSubmittalModal = document.getElementById('btn-cancel-submittal-modal');
+    const submittalForm = document.getElementById('submittal-form');
+
     // ── Helper: Escape HTML ──
     function escapeHtml(str) {
         if (!str) return '';
