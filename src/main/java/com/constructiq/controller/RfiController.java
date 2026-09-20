@@ -32,11 +32,13 @@ public class RfiController {
     @PutMapping("/rfis/{id}")
     public ResponseEntity<Rfi> updateRfi(@PathVariable Long id, @RequestBody Rfi updates) {
         return rfiRepository.findById(id).map(r -> {
-            r.setStatus(updates.getStatus());
-            r.setResponse(updates.getResponse());
-            r.setBallInCourt(updates.getBallInCourt());
-            r.setAssignedTo(updates.getAssignedTo());
-            r.setDueDate(updates.getDueDate());
+            if (updates.getRfiNumber() != null) r.setRfiNumber(updates.getRfiNumber());
+            if (updates.getSubject() != null) r.setSubject(updates.getSubject());
+            if (updates.getStatus() != null) r.setStatus(updates.getStatus());
+            if (updates.getResponse() != null) r.setResponse(updates.getResponse());
+            if (updates.getBallInCourt() != null) r.setBallInCourt(updates.getBallInCourt());
+            if (updates.getAssignedTo() != null) r.setAssignedTo(updates.getAssignedTo());
+            if (updates.getDueDate() != null) r.setDueDate(updates.getDueDate());
             return ResponseEntity.ok(rfiRepository.save(r));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -62,9 +64,20 @@ public class RfiController {
     @PutMapping("/submittals/{id}")
     public ResponseEntity<Submittal> updateSubmittal(@PathVariable Long id, @RequestBody Submittal updates) {
         return submittalRepository.findById(id).map(s -> {
-            s.setStatus(updates.getStatus());
-            s.setReviewedBy(updates.getReviewedBy());
+            if (updates.getSubmittalNumber() != null) s.setSubmittalNumber(updates.getSubmittalNumber());
+            if (updates.getSpecSection() != null) s.setSpecSection(updates.getSpecSection());
+            if (updates.getDescription() != null) s.setDescription(updates.getDescription());
+            if (updates.getStatus() != null) s.setStatus(updates.getStatus());
+            if (updates.getSubmittedByName() != null) s.setSubmittedByName(updates.getSubmittedByName());
+            if (updates.getReviewedBy() != null) s.setReviewedBy(updates.getReviewedBy());
             return ResponseEntity.ok(submittalRepository.save(s));
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/submittals/{id}")
+    public ResponseEntity<Void> deleteSubmittal(@PathVariable Long id) {
+        if (!submittalRepository.existsById(id)) return ResponseEntity.notFound().build();
+        submittalRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

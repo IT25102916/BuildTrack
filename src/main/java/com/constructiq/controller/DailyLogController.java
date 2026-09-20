@@ -17,6 +17,11 @@ public class DailyLogController {
 
     @Autowired private DailyLogRepository dailyLogRepository;
 
+    @GetMapping
+    public List<DailyLog> getAllLogs() {
+        return dailyLogRepository.findAll();
+    }
+
     @GetMapping("/project/{projectId}")
     public List<DailyLog> getByProject(@PathVariable Long projectId) {
         return dailyLogRepository.findByProjectIdOrderByLogDateDesc(projectId);
@@ -35,14 +40,16 @@ public class DailyLogController {
     @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<DailyLog> update(@PathVariable Long id, @RequestBody DailyLog updates) {
         return dailyLogRepository.findById(id).map(l -> {
-            l.setWeather(updates.getWeather());
-            l.setTemperature(updates.getTemperature());
-            l.setManpowerCount(updates.getManpowerCount());
-            l.setWorkPerformed(updates.getWorkPerformed());
-            l.setDelays(updates.getDelays());
-            l.setSigned(updates.isIsSigned());
-            l.setSignedByName(updates.getSignedByName());
-            l.setPhotoCount(updates.getPhotoCount());
+            if (updates.getWeather() != null) l.setWeather(updates.getWeather());
+            if (updates.getTemperature() != null) l.setTemperature(updates.getTemperature());
+            if (updates.getManpowerCount() > 0) l.setManpowerCount(updates.getManpowerCount());
+            if (updates.getWorkPerformed() != null) l.setWorkPerformed(updates.getWorkPerformed());
+            if (updates.getDelays() != null) l.setDelays(updates.getDelays());
+            if (updates.isIsSigned()) {
+                l.setSigned(true);
+            }
+            if (updates.getSignedByName() != null) l.setSignedByName(updates.getSignedByName());
+            if (updates.getPhotoCount() > 0) l.setPhotoCount(updates.getPhotoCount());
             return ResponseEntity.ok(dailyLogRepository.save(l));
         }).orElse(ResponseEntity.notFound().build());
     }

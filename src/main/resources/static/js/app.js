@@ -24,6 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Navigation Elements ──
     const navDashboard = document.getElementById('nav-dashboard');
     const navProjects = document.getElementById('nav-projects');
+    const navTasks = document.getElementById('nav-tasks');
+    const navDailyLogs = document.getElementById('nav-daily-logs');
+    const navPunch = document.getElementById('nav-punch');
+    const navSafety = document.getElementById('nav-safety');
+    const navRfis = document.getElementById('nav-rfis');
     const navTeam = document.getElementById('nav-team');
     const navDocuments = document.getElementById('nav-documents');
     const navAnalytics = document.getElementById('nav-analytics');
@@ -35,6 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const viewDashboard = document.getElementById('view-dashboard');
     const viewProjects = document.getElementById('view-projects');
+    const viewTasks = document.getElementById('view-tasks');
+    const viewDailyLogs = document.getElementById('view-daily-logs');
+    const viewPunch = document.getElementById('view-punch');
+    const viewSafety = document.getElementById('view-safety');
+    const viewRfis = document.getElementById('view-rfis');
     const viewTeam = document.getElementById('view-team');
     const viewDocuments = document.getElementById('view-documents');
     const viewAnalytics = document.getElementById('view-analytics');
@@ -128,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide/Show sidebar links based on role
         const role = currentUser.role.toLowerCase();
         
-        const allNavs = [navDashboard, navProjects, navTeam, navDocuments, navAnalytics, navContractors, navReports, navSettings, navFinance, navInventory];
+        const allNavs = [navDashboard, navProjects, navTasks, navDailyLogs, navPunch, navSafety, navRfis, navTeam, navDocuments, navAnalytics, navContractors, navReports, navSettings, navFinance, navInventory];
         allNavs.forEach(nav => {
             if(nav && nav.parentElement) nav.parentElement.style.display = 'none';
         });
@@ -138,19 +148,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (role === 'admin') {
             allNavs.forEach(nav => { if(nav && nav.parentElement) nav.parentElement.style.display = 'block'; });
         } else if (role === 'pm') {
-            [navProjects, navTeam, navDocuments, navAnalytics, navContractors, navReports, navSettings].forEach(nav => {
+            [navProjects, navTasks, navDailyLogs, navPunch, navSafety, navRfis, navTeam, navDocuments, navAnalytics, navContractors, navReports, navSettings].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         } else if (role === 'site_engineer') {
-            [navProjects, navDocuments, navReports].forEach(nav => {
+            [navProjects, navTasks, navDailyLogs, navPunch, navSafety, navRfis, navDocuments, navReports].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         } else if (role === 'subcontractor') {
-            [navDocuments, navReports].forEach(nav => {
+            [navTasks, navPunch, navDocuments, navReports].forEach(nav => {
+                if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
+            });
+        } else if (role === 'client') {
+            [navProjects, navTasks, navPunch, navDocuments, navReports].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         } else if (role === 'procurement') {
-            [navProjects, navInventory, navContractors, navReports].forEach(nav => {
+            [navProjects, navTasks, navInventory, navContractors, navReports].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         } else if (role === 'finance' || role === 'finance executive') {
@@ -277,6 +291,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Navigation Listeners ──
     navDashboard.addEventListener('click', (e) => { e.preventDefault(); switchView('dashboard'); });
     navProjects.addEventListener('click', (e) => { e.preventDefault(); switchView('projects'); loadProjects(); });
+    if (navTasks) navTasks.addEventListener('click', (e) => { e.preventDefault(); switchView('tasks'); });
+    if (navDailyLogs) navDailyLogs.addEventListener('click', (e) => { e.preventDefault(); switchView('daily-logs'); });
+    if (navPunch) navPunch.addEventListener('click', (e) => { e.preventDefault(); switchView('punch'); });
+    if (navSafety) navSafety.addEventListener('click', (e) => { e.preventDefault(); switchView('safety'); });
+    if (navRfis) navRfis.addEventListener('click', (e) => { e.preventDefault(); switchView('rfis'); });
     navTeam.addEventListener('click', (e) => { e.preventDefault(); switchView('team'); loadTeam(); });
     navDocuments.addEventListener('click', (e) => { e.preventDefault(); switchView('documents'); loadDocuments(); });
     navAnalytics.addEventListener('click', (e) => { e.preventDefault(); switchView('analytics'); renderAnalytics(); });
@@ -305,6 +324,31 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (viewName === 'projects') {
             navProjects.parentElement.classList.add('active');
             viewProjects.classList.remove('hidden');
+        } else if (viewName === 'tasks') {
+            if (navTasks) navTasks.parentElement.classList.add('active');
+            if (viewTasks) viewTasks.classList.remove('hidden');
+            populateDropdowns();
+            loadTasks();
+        } else if (viewName === 'daily-logs') {
+            if (navDailyLogs) navDailyLogs.parentElement.classList.add('active');
+            if (viewDailyLogs) viewDailyLogs.classList.remove('hidden');
+            populateDropdowns();
+            loadDailyLogs();
+        } else if (viewName === 'punch') {
+            if (navPunch) navPunch.parentElement.classList.add('active');
+            if (viewPunch) viewPunch.classList.remove('hidden');
+            populateDropdowns();
+            loadPunchItems();
+        } else if (viewName === 'safety') {
+            if (navSafety) navSafety.parentElement.classList.add('active');
+            if (viewSafety) viewSafety.classList.remove('hidden');
+            populateDropdowns();
+            loadSafetyIncidents();
+        } else if (viewName === 'rfis') {
+            if (navRfis) navRfis.parentElement.classList.add('active');
+            if (viewRfis) viewRfis.classList.remove('hidden');
+            populateDropdowns();
+            loadRfisAndSubmittals();
         } else if (viewName === 'team') {
             navTeam.parentElement.classList.add('active');
             viewTeam.classList.remove('hidden');
@@ -1974,6 +2018,1208 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 🚀 NEW MODULES: Tasks, Daily Logs, Punch List, Safety, RFIs & Submittals
+    // ══════════════════════════════════════════════════════════════════════
+
+    // ── Module State & DOM Elements ──
+    let allTasks = [];
+    let allDailyLogs = [];
+    let allPunchItems = [];
+    let allSafetyIncidents = [];
+    let allRfis = [];
+    let allSubmittals = [];
+    let punchCurrentFilter = 'all';
+
+    // Tasks DOM
+    const tasksProjectFilter = document.getElementById('tasks-project-filter');
+    const tasksTableBody = document.getElementById('tasks-table-body');
+    const loadingTasks = document.getElementById('loading-spinner-tasks');
+    const emptyTasks = document.getElementById('empty-state-tasks');
+    const btnAddTask = document.getElementById('btn-add-task');
+    const taskModal = document.getElementById('task-modal');
+    const btnCloseTaskModal = document.getElementById('btn-close-task-modal');
+    const btnCancelTaskModal = document.getElementById('btn-cancel-task-modal');
+    const taskForm = document.getElementById('task-form');
+
+    // Daily Logs DOM
+    const dailyLogsProjectFilter = document.getElementById('daily-logs-project-filter');
+    const dailyLogsTableBody = document.getElementById('daily-logs-table-body');
+    const loadingDailyLogs = document.getElementById('loading-spinner-daily-logs');
+    const emptyDailyLogs = document.getElementById('empty-state-daily-logs');
+    const btnAddDailyLog = document.getElementById('btn-add-daily-log');
+    const dailyLogModal = document.getElementById('daily-log-modal');
+    const btnCloseDailyLogModal = document.getElementById('btn-close-daily-log-modal');
+    const btnCancelDailyLogModal = document.getElementById('btn-cancel-daily-log-modal');
+    const dailyLogForm = document.getElementById('daily-log-form');
+
+    // Punch List DOM
+    const punchProjectFilter = document.getElementById('punch-project-filter');
+    const punchTableBody = document.getElementById('punch-table-body');
+    const loadingPunch = document.getElementById('loading-spinner-punch');
+    const emptyPunch = document.getElementById('empty-state-punch');
+    const btnAddPunch = document.getElementById('btn-add-punch');
+    const punchModal = document.getElementById('punch-modal');
+    const btnClosePunchModal = document.getElementById('btn-close-punch-modal');
+    const btnCancelPunchModal = document.getElementById('btn-cancel-punch-modal');
+    const punchForm = document.getElementById('punch-form');
+
+    // Safety DOM
+    const safetyProjectFilter = document.getElementById('safety-project-filter');
+    const safetyTableBody = document.getElementById('safety-table-body');
+    const loadingSafety = document.getElementById('loading-spinner-safety');
+    const emptySafety = document.getElementById('empty-state-safety');
+    const btnAddSafety = document.getElementById('btn-add-safety');
+    const safetyModal = document.getElementById('safety-modal');
+    const btnCloseSafetyModal = document.getElementById('btn-close-safety-modal');
+    const btnCancelSafetyModal = document.getElementById('btn-cancel-safety-modal');
+    const safetyForm = document.getElementById('safety-form');
+
+    // RFIs & Submittals DOM
+    const rfisProjectFilter = document.getElementById('rfis-project-filter');
+    const btnTabRfis = document.getElementById('btn-tab-rfis');
+    const btnTabSubmittals = document.getElementById('btn-tab-submittals');
+    const rfisSubview = document.getElementById('rfis-subview');
+    const submittalsSubview = document.getElementById('submittals-subview');
+    const rfisTableBody = document.getElementById('rfis-table-body');
+    const loadingRfis = document.getElementById('loading-spinner-rfis');
+    const emptyRfis = document.getElementById('empty-state-rfis');
+    const btnAddRfi = document.getElementById('btn-add-rfi');
+    const rfiModal = document.getElementById('rfi-modal');
+    const btnCloseRfiModal = document.getElementById('btn-close-rfi-modal');
+    const btnCancelRfiModal = document.getElementById('btn-cancel-rfi-modal');
+    const rfiForm = document.getElementById('rfi-form');
+    const rfiResponseModal = document.getElementById('rfi-response-modal');
+    const btnCloseRfiResponseModal = document.getElementById('btn-close-rfi-response-modal');
+    const btnCancelRfiResponseModal = document.getElementById('btn-cancel-rfi-response-modal');
+    const rfiResponseForm = document.getElementById('rfi-response-form');
+
+    // Submittals DOM
+    const submittalsTableBody = document.getElementById('submittals-table-body');
+    const loadingSubmittals = document.getElementById('loading-spinner-submittals');
+    const emptySubmittals = document.getElementById('empty-state-submittals');
+    const btnAddSubmittal = document.getElementById('btn-add-submittal');
+    const submittalModal = document.getElementById('submittal-modal');
+    const btnCloseSubmittalModal = document.getElementById('btn-close-submittal-modal');
+    const btnCancelSubmittalModal = document.getElementById('btn-cancel-submittal-modal');
+    const submittalForm = document.getElementById('submittal-form');
+
+    // ── Helper: Escape HTML ──
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // ── Helper: Populate Project & Assignee Dropdowns ──
+    async function populateDropdowns() {
+        if (projects.length === 0) {
+            try { projects = await api.get('/projects'); } catch(e) {}
+        }
+        if (team.length === 0) {
+            try { team = await api.get('/users'); } catch(e) {}
+        }
+
+        const projectFilters = [tasksProjectFilter, dailyLogsProjectFilter, punchProjectFilter, safetyProjectFilter, rfisProjectFilter];
+        projectFilters.forEach(select => {
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">All Projects</option>';
+            projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                select.appendChild(opt);
+            });
+            if (currentVal) select.value = currentVal;
+        });
+
+        const projectModalSelects = [
+            document.getElementById('task-project-id'),
+            document.getElementById('log-project-id'),
+            document.getElementById('punch-project-id'),
+            document.getElementById('safety-project-id'),
+            document.getElementById('rfi-project-id'),
+            document.getElementById('submittal-project-id')
+        ];
+        projectModalSelects.forEach(select => {
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Select Project --</option>';
+            projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                select.appendChild(opt);
+            });
+            if (currentVal) select.value = currentVal;
+        });
+
+        const assignedSelect = document.getElementById('task-assigned-user');
+        if (assignedSelect) {
+            const currentVal = assignedSelect.value;
+            assignedSelect.innerHTML = '<option value="">-- Unassigned --</option>';
+            team.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = `${u.name} (${u.role})`;
+                assignedSelect.appendChild(opt);
+            });
+            if (currentVal) assignedSelect.value = currentVal;
+        }
+    }
+
+    // Modal Helper: Wire close handlers
+    function setupModalClose(modal, closeBtn, cancelBtn) {
+        if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        if (modal) modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.add('hidden');
+        });
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 1. TASKS & SCHEDULING (FULL CRUD: POST, GET, PUT, DELETE)
+    // ──────────────────────────────────────────────────────────────────────
+    setupModalClose(taskModal, btnCloseTaskModal, btnCancelTaskModal);
+
+    if (tasksProjectFilter) {
+        tasksProjectFilter.addEventListener('change', () => loadTasks());
+    }
+
+    if (btnAddTask) {
+        btnAddTask.addEventListener('click', () => {
+            taskForm.reset();
+            document.getElementById('task-id').value = '';
+            document.getElementById('task-modal-title').textContent = 'New Task';
+            document.getElementById('task-percent').value = 0;
+            document.getElementById('task-percent-display').textContent = '0%';
+            if (tasksProjectFilter && tasksProjectFilter.value) {
+                document.getElementById('task-project-id').value = tasksProjectFilter.value;
+            }
+            taskModal.classList.remove('hidden');
+        });
+    }
+
+    if (taskForm) {
+        taskForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('task-id').value;
+            const userSelect = document.getElementById('task-assigned-user');
+            const payload = {
+                projectId: Number(document.getElementById('task-project-id').value),
+                name: document.getElementById('task-name').value.trim(),
+                startDate: document.getElementById('task-start-date').value || null,
+                endDate: document.getElementById('task-end-date').value || null,
+                assignedUserId: userSelect.value ? Number(userSelect.value) : null,
+                assignedName: userSelect.value && userSelect.selectedOptions[0] ? userSelect.selectedOptions[0].text.split(' (')[0] : null,
+                percentComplete: Number(document.getElementById('task-percent').value || 0),
+                status: document.getElementById('task-status').value,
+                isMilestone: document.getElementById('task-is-milestone').checked,
+                isCritical: document.getElementById('task-is-critical').checked
+            };
+
+            try {
+                if (id) {
+                    await api.put(`/tasks/${id}`, payload);
+                    showToast('Success', 'Task updated successfully', 'success');
+                } else {
+                    await api.post('/tasks', payload);
+                    showToast('Success', 'Task created successfully', 'success');
+                }
+                taskModal.classList.add('hidden');
+                loadTasks();
+            } catch (err) {
+                showToast('Error', err.message || 'Failed to save task', 'error');
+            }
+        });
+    }
+
+    async function loadTasks(projectId) {
+        projectId = projectId || (tasksProjectFilter ? tasksProjectFilter.value : '');
+        if (loadingTasks) loadingTasks.classList.remove('hidden');
+        if (emptyTasks) emptyTasks.classList.add('hidden');
+        if (tasksTableBody) tasksTableBody.innerHTML = '';
+        try {
+            const endpoint = projectId ? `/tasks/project/${projectId}` : '/tasks';
+            allTasks = await api.get(endpoint) || [];
+            renderTasksTable();
+        } catch (err) {
+            showToast('Error', 'Failed to load tasks: ' + err.message, 'error');
+            renderTasksTable();
+        } finally {
+            if (loadingTasks) loadingTasks.classList.add('hidden');
+        }
+    }
+
+    function renderTasksTable() {
+        if (!tasksTableBody) return;
+        tasksTableBody.innerHTML = '';
+        const total = allTasks.length;
+        const progress = allTasks.filter(t => t.status === 'in_progress').length;
+        const completed = allTasks.filter(t => t.status === 'completed').length;
+        const critical = allTasks.filter(t => t.isCritical || t.critical || t.isMilestone || t.milestone).length;
+
+        const elTotal = document.getElementById('stat-tasks-total');
+        const elProgress = document.getElementById('stat-tasks-progress');
+        const elCompleted = document.getElementById('stat-tasks-completed');
+        const elCritical = document.getElementById('stat-tasks-critical');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elProgress) elProgress.textContent = progress;
+        if (elCompleted) elCompleted.textContent = completed;
+        if (elCritical) elCritical.textContent = critical;
+
+        if (total === 0) {
+            if (emptyTasks) emptyTasks.classList.remove('hidden');
+            return;
+        }
+        if (emptyTasks) emptyTasks.classList.add('hidden');
+
+        allTasks.forEach(task => {
+            const p = projects.find(proj => proj.id === task.projectId);
+            const isMilestone = task.isMilestone || task.milestone;
+            const isCritical = task.isCritical || task.critical;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div style="font-weight: 600;">${escapeHtml(task.name)}</div>
+                    <div style="font-size: 11px; color: var(--text-secondary); display:flex; gap:6px; margin-top:3px;">
+                        ${isMilestone ? '<span class="stat-pill" style="color:#fbbf24;"><i class="fa-solid fa-flag"></i> Milestone</span>' : ''}
+                        ${isCritical ? '<span class="stat-pill" style="color:#f87171;"><i class="fa-solid fa-fire"></i> Critical Path</span>' : ''}
+                    </div>
+                </td>
+                <td>${p ? escapeHtml(p.name) : 'Project #' + task.projectId}</td>
+                <td>
+                    <div>${task.startDate || '—'}</div>
+                    <div style="font-size:12px; color:var(--text-secondary)">to ${task.endDate || '—'}</div>
+                </td>
+                <td>${escapeHtml(task.assignedName || 'Unassigned')}</td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: ${task.percentComplete || 0}%"></div>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 600;">${task.percentComplete || 0}%</span>
+                </td>
+                <td>
+                    <span class="status-badge status-${task.status}">
+                        ${task.status ? task.status.replace('_', ' ').toUpperCase() : 'PENDING'}
+                    </span>
+                </td>
+                <td style="text-align: right;">
+                    <button class="btn-icon" onclick="editTask(${task.id})" title="Edit Task" data-requires-role="pm,admin"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn-icon danger" onclick="deleteTask(${task.id})" title="Delete Task" data-requires-role="pm,admin"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            tasksTableBody.appendChild(tr);
+        });
+        applyRoleRestrictions();
+    }
+
+    window.editTask = function(id) {
+        const task = allTasks.find(t => t.id === id);
+        if (!task) return;
+        document.getElementById('task-id').value = task.id;
+        document.getElementById('task-modal-title').textContent = 'Edit Task';
+        document.getElementById('task-project-id').value = task.projectId;
+        document.getElementById('task-name').value = task.name;
+        document.getElementById('task-start-date').value = task.startDate || '';
+        document.getElementById('task-end-date').value = task.endDate || '';
+        document.getElementById('task-assigned-user').value = task.assignedUserId || '';
+        document.getElementById('task-status').value = task.status || 'pending';
+        document.getElementById('task-percent').value = task.percentComplete || 0;
+        document.getElementById('task-percent-display').textContent = (task.percentComplete || 0) + '%';
+        document.getElementById('task-is-milestone').checked = Boolean(task.isMilestone || task.milestone);
+        document.getElementById('task-is-critical').checked = Boolean(task.isCritical || task.critical);
+        taskModal.classList.remove('hidden');
+    };
+
+    window.deleteTask = async function(id) {
+        if (!confirm('Are you sure you want to delete this task?')) return;
+        try {
+            await api.delete(`/tasks/${id}`);
+            showToast('Success', 'Task deleted successfully', 'success');
+            loadTasks();
+        } catch (err) {
+            showToast('Error', 'Failed to delete task: ' + err.message, 'error');
+        }
+    };
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 2. DAILY FIELD LOGS (FULL CRUD & PM SIGN-OFF: POST, GET, PUT, DELETE)
+    // ──────────────────────────────────────────────────────────────────────
+    setupModalClose(dailyLogModal, btnCloseDailyLogModal, btnCancelDailyLogModal);
+
+    if (dailyLogsProjectFilter) {
+        dailyLogsProjectFilter.addEventListener('change', () => loadDailyLogs());
+    }
+
+    if (btnAddDailyLog) {
+        btnAddDailyLog.addEventListener('click', () => {
+            dailyLogForm.reset();
+            document.getElementById('log-id').value = '';
+            document.getElementById('daily-log-modal-title').textContent = 'New Daily Field Log';
+            document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('log-manpower').value = 1;
+            if (dailyLogsProjectFilter && dailyLogsProjectFilter.value) {
+                document.getElementById('log-project-id').value = dailyLogsProjectFilter.value;
+            }
+            dailyLogModal.classList.remove('hidden');
+        });
+    }
+
+    if (dailyLogForm) {
+        dailyLogForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('log-id').value;
+            const payload = {
+                projectId: Number(document.getElementById('log-project-id').value),
+                logDate: document.getElementById('log-date').value,
+                weather: document.getElementById('log-weather').value,
+                temperature: document.getElementById('log-temp').value.trim() || null,
+                manpowerCount: Number(document.getElementById('log-manpower').value || 0),
+                workPerformed: document.getElementById('log-work').value.trim(),
+                delays: document.getElementById('log-delays').value.trim() || null
+            };
+
+            try {
+                if (id) {
+                    await api.put(`/daily-logs/${id}`, payload);
+                    showToast('Success', 'Daily log updated', 'success');
+                } else {
+                    await api.post('/daily-logs', payload);
+                    showToast('Success', 'Daily log created', 'success');
+                }
+                dailyLogModal.classList.add('hidden');
+                loadDailyLogs();
+            } catch (err) {
+                showToast('Error', err.message || 'Failed to save daily log', 'error');
+            }
+        });
+    }
+
+    async function loadDailyLogs(projectId) {
+        projectId = projectId || (dailyLogsProjectFilter ? dailyLogsProjectFilter.value : '');
+        if (loadingDailyLogs) loadingDailyLogs.classList.remove('hidden');
+        if (emptyDailyLogs) emptyDailyLogs.classList.add('hidden');
+        if (dailyLogsTableBody) dailyLogsTableBody.innerHTML = '';
+        try {
+            const endpoint = projectId ? `/daily-logs/project/${projectId}` : '/daily-logs';
+            allDailyLogs = await api.get(endpoint) || [];
+            renderDailyLogsTable();
+        } catch (err) {
+            showToast('Error', 'Failed to load daily logs: ' + err.message, 'error');
+            renderDailyLogsTable();
+        } finally {
+            if (loadingDailyLogs) loadingDailyLogs.classList.add('hidden');
+        }
+    }
+
+    function renderDailyLogsTable() {
+        if (!dailyLogsTableBody) return;
+        dailyLogsTableBody.innerHTML = '';
+        const total = allDailyLogs.length;
+        const signed = allDailyLogs.filter(l => l.isSigned || l.signed).length;
+        const pending = total - signed;
+        const manpower = allDailyLogs.reduce((sum, l) => sum + (Number(l.manpowerCount) || 0), 0);
+
+        const elTotal = document.getElementById('stat-logs-total');
+        const elSigned = document.getElementById('stat-logs-signed');
+        const elPending = document.getElementById('stat-logs-pending');
+        const elManpower = document.getElementById('stat-logs-manpower');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elSigned) elSigned.textContent = signed;
+        if (elPending) elPending.textContent = pending;
+        if (elManpower) elManpower.textContent = manpower;
+
+        if (total === 0) {
+            if (emptyDailyLogs) emptyDailyLogs.classList.remove('hidden');
+            return;
+        }
+        if (emptyDailyLogs) emptyDailyLogs.classList.add('hidden');
+
+        allDailyLogs.forEach(log => {
+            const p = projects.find(proj => proj.id === log.projectId);
+            const isSigned = log.isSigned || log.signed;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 600;">${log.logDate}</td>
+                <td>${p ? escapeHtml(p.name) : 'Project #' + log.projectId}</td>
+                <td>${escapeHtml(log.weather || 'Clear')} ${log.temperature ? '• ' + escapeHtml(log.temperature) : ''}</td>
+                <td><span class="stat-pill"><i class="fa-solid fa-users"></i> ${log.manpowerCount} workers</span></td>
+                <td style="max-width: 250px;">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(log.workPerformed || '')}">
+                        ${escapeHtml(log.workPerformed || '—')}
+                    </div>
+                </td>
+                <td style="max-width: 180px; color: var(--text-secondary);">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(log.delays || '')}">
+                        ${escapeHtml(log.delays || 'None')}
+                    </div>
+                </td>
+                <td>
+                    ${isSigned 
+                        ? `<span class="status-badge status-signed"><i class="fa-solid fa-check"></i> Signed (${escapeHtml(log.signedByName || 'PM')})</span>`
+                        : `<span class="status-badge status-unsigned"><i class="fa-solid fa-clock"></i> Unsigned</span>`
+                    }
+                </td>
+                <td style="text-align: right;">
+                    ${!isSigned ? `<button class="btn btn-sm btn-primary" onclick="signDailyLog(${log.id})" title="Sign & Approve as PM" style="padding: 4px 8px; font-size: 11px; margin-right: 4px;" data-requires-role="pm,admin"><i class="fa-solid fa-file-signature"></i> Sign</button>` : ''}
+                    <button class="btn-icon" onclick="editDailyLog(${log.id})" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn-icon danger" onclick="deleteDailyLog(${log.id})" title="Delete Log"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            dailyLogsTableBody.appendChild(tr);
+        });
+        applyRoleRestrictions();
+    }
+
+    window.signDailyLog = async function(id) {
+        try {
+            await api.put(`/daily-logs/${id}`, {
+                isSigned: true,
+                signedByName: currentUser?.name || 'Marcus Brody (PM)'
+            });
+            showToast('Approved', 'Daily field log formally signed & approved', 'success');
+            loadDailyLogs();
+        } catch (err) {
+            showToast('Error', 'Failed to sign log: ' + err.message, 'error');
+        }
+    };
+
+    window.editDailyLog = function(id) {
+        const log = allDailyLogs.find(l => l.id === id);
+        if (!log) return;
+        document.getElementById('log-id').value = log.id;
+        document.getElementById('daily-log-modal-title').textContent = 'Edit Daily Log';
+        document.getElementById('log-project-id').value = log.projectId;
+        document.getElementById('log-date').value = log.logDate || '';
+        document.getElementById('log-weather').value = log.weather || 'Sunny';
+        document.getElementById('log-temp').value = log.temperature || '';
+        document.getElementById('log-manpower').value = log.manpowerCount || 0;
+        document.getElementById('log-work').value = log.workPerformed || '';
+        document.getElementById('log-delays').value = log.delays || '';
+        dailyLogModal.classList.remove('hidden');
+    };
+
+    window.deleteDailyLog = async function(id) {
+        if (!confirm('Are you sure you want to delete this daily field log?')) return;
+        try {
+            await api.delete(`/daily-logs/${id}`);
+            showToast('Success', 'Daily log deleted', 'success');
+            loadDailyLogs();
+        } catch (err) {
+            showToast('Error', 'Failed to delete daily log: ' + err.message, 'error');
+        }
+    };
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 3. PUNCH LIST ITEMS (FULL CRUD & CLOSEOUT: POST, GET, PUT, DELETE)
+    // ──────────────────────────────────────────────────────────────────────
+    setupModalClose(punchModal, btnClosePunchModal, btnCancelPunchModal);
+
+    if (punchProjectFilter) {
+        punchProjectFilter.addEventListener('change', () => loadPunchItems());
+    }
+
+    // Punch sub-tab filter buttons
+    const punchTabs = [
+        { id: 'btn-punch-filter-all', filter: 'all' },
+        { id: 'btn-punch-filter-open', filter: 'open' },
+        { id: 'btn-punch-filter-review', filter: 'ready_review' },
+        { id: 'btn-punch-filter-closed', filter: 'closed' }
+    ];
+    punchTabs.forEach(tab => {
+        const btn = document.getElementById(tab.id);
+        if (btn) {
+            btn.addEventListener('click', () => {
+                punchTabs.forEach(t => document.getElementById(t.id)?.classList.remove('active'));
+                btn.classList.add('active');
+                punchCurrentFilter = tab.filter;
+                renderPunchTable();
+            });
+        }
+    });
+
+    if (btnAddPunch) {
+        btnAddPunch.addEventListener('click', () => {
+            punchForm.reset();
+            document.getElementById('punch-id').value = '';
+            document.getElementById('punch-modal-title').textContent = 'New Punch Item';
+            if (punchProjectFilter && punchProjectFilter.value) {
+                document.getElementById('punch-project-id').value = punchProjectFilter.value;
+            }
+            punchModal.classList.remove('hidden');
+        });
+    }
+
+    if (punchForm) {
+        punchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('punch-id').value;
+            const payload = {
+                projectId: Number(document.getElementById('punch-project-id').value),
+                location: document.getElementById('punch-location').value.trim(),
+                description: document.getElementById('punch-description').value.trim(),
+                responsibleParty: document.getElementById('punch-responsible').value.trim() || null,
+                dueDate: document.getElementById('punch-due-date').value || null,
+                status: document.getElementById('punch-status').value
+            };
+
+            try {
+                if (id) {
+                    await api.put(`/punch/${id}`, payload);
+                    showToast('Success', 'Punch item updated', 'success');
+                } else {
+                    await api.post('/punch', payload);
+                    showToast('Success', 'Punch item reported', 'success');
+                }
+                punchModal.classList.add('hidden');
+                loadPunchItems();
+            } catch (err) {
+                showToast('Error', err.message || 'Failed to save punch item', 'error');
+            }
+        });
+    }
+
+    async function loadPunchItems(projectId) {
+        projectId = projectId || (punchProjectFilter ? punchProjectFilter.value : '');
+        if (loadingPunch) loadingPunch.classList.remove('hidden');
+        if (emptyPunch) emptyPunch.classList.add('hidden');
+        if (punchTableBody) punchTableBody.innerHTML = '';
+        try {
+            const endpoint = projectId ? `/punch/project/${projectId}` : '/punch';
+            allPunchItems = await api.get(endpoint) || [];
+            renderPunchTable();
+        } catch (err) {
+            showToast('Error', 'Failed to load punch items: ' + err.message, 'error');
+            renderPunchTable();
+        } finally {
+            if (loadingPunch) loadingPunch.classList.add('hidden');
+        }
+    }
+
+    function renderPunchTable() {
+        if (!punchTableBody) return;
+        punchTableBody.innerHTML = '';
+        const total = allPunchItems.length;
+        const open = allPunchItems.filter(p => p.status === 'open').length;
+        const review = allPunchItems.filter(p => p.status === 'ready_review').length;
+        const closed = allPunchItems.filter(p => p.status === 'closed').length;
+
+        const elTotal = document.getElementById('stat-punch-total');
+        const elOpen = document.getElementById('stat-punch-open');
+        const elReview = document.getElementById('stat-punch-review');
+        const elClosed = document.getElementById('stat-punch-closed');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elOpen) elOpen.textContent = open;
+        if (elReview) elReview.textContent = review;
+        if (elClosed) elClosed.textContent = closed;
+
+        let filtered = allPunchItems;
+        if (punchCurrentFilter !== 'all') {
+            filtered = allPunchItems.filter(p => p.status === punchCurrentFilter);
+        }
+
+        if (filtered.length === 0) {
+            if (emptyPunch) emptyPunch.classList.remove('hidden');
+            return;
+        }
+        if (emptyPunch) emptyPunch.classList.add('hidden');
+
+        filtered.forEach(p => {
+            const proj = projects.find(pr => pr.id === p.projectId);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 600;">PUNCH-${String(p.id).padStart(4, '0')}</td>
+                <td>${proj ? escapeHtml(proj.name) : 'Project #' + p.projectId}</td>
+                <td>${escapeHtml(p.location)}</td>
+                <td style="max-width: 250px;">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(p.description)}">
+                        ${escapeHtml(p.description)}
+                    </div>
+                </td>
+                <td>${escapeHtml(p.responsibleParty || 'Unassigned')}</td>
+                <td>${p.dueDate || '—'}</td>
+                <td>
+                    <span class="status-badge status-${p.status}">
+                        ${p.status === 'ready_review' ? 'READY REVIEW' : p.status.toUpperCase()}
+                    </span>
+                </td>
+                <td style="text-align: right;">
+                    ${p.status === 'open' ? `<button class="btn btn-sm btn-secondary" onclick="readyPunchItem(${p.id})" title="Mark Ready for Review" style="padding:4px 8px; font-size:11px; margin-right:4px;"><i class="fa-solid fa-eye"></i> Ready</button>` : ''}
+                    ${p.status !== 'closed' ? `<button class="btn btn-sm btn-primary" onclick="closePunchItem(${p.id})" title="Sign-off & Close Item" style="padding:4px 8px; font-size:11px; margin-right:4px;"><i class="fa-solid fa-check-double"></i> Close</button>` : ''}
+                    <button class="btn-icon" onclick="editPunchItem(${p.id})" title="Edit Punch Item"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn-icon danger" onclick="deletePunchItem(${p.id})" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            punchTableBody.appendChild(tr);
+        });
+        applyRoleRestrictions();
+    }
+
+    window.readyPunchItem = async function(id) {
+        try {
+            await api.put(`/punch/${id}`, { status: 'ready_review' });
+            showToast('Updated', 'Punch item marked ready for review', 'success');
+            loadPunchItems();
+        } catch (err) {
+            showToast('Error', 'Failed to update punch item: ' + err.message, 'error');
+        }
+    };
+
+    window.closePunchItem = async function(id) {
+        try {
+            await api.put(`/punch/${id}`, { status: 'closed' });
+            showToast('Closed', 'Punch item verified and marked closed', 'success');
+            loadPunchItems();
+        } catch (err) {
+            showToast('Error', 'Failed to close punch item: ' + err.message, 'error');
+        }
+    };
+
+    window.editPunchItem = function(id) {
+        const item = allPunchItems.find(p => p.id === id);
+        if (!item) return;
+        document.getElementById('punch-id').value = item.id;
+        document.getElementById('punch-modal-title').textContent = 'Edit Punch Item';
+        document.getElementById('punch-project-id').value = item.projectId;
+        document.getElementById('punch-location').value = item.location || '';
+        document.getElementById('punch-description').value = item.description || '';
+        document.getElementById('punch-responsible').value = item.responsibleParty || '';
+        document.getElementById('punch-due-date').value = item.dueDate || '';
+        document.getElementById('punch-status').value = item.status || 'open';
+        punchModal.classList.remove('hidden');
+    };
+
+    window.deletePunchItem = async function(id) {
+        if (!confirm('Are you sure you want to delete this punch item?')) return;
+        try {
+            await api.delete(`/punch/${id}`);
+            showToast('Success', 'Punch item deleted', 'success');
+            loadPunchItems();
+        } catch (err) {
+            showToast('Error', 'Failed to delete punch item: ' + err.message, 'error');
+        }
+    };
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 4. SAFETY INCIDENTS (FULL CRUD & RESOLUTION: POST, GET, PUT, DELETE)
+    // ──────────────────────────────────────────────────────────────────────
+    setupModalClose(safetyModal, btnCloseSafetyModal, btnCancelSafetyModal);
+
+    if (safetyProjectFilter) {
+        safetyProjectFilter.addEventListener('change', () => loadSafetyIncidents());
+    }
+
+    if (btnAddSafety) {
+        btnAddSafety.addEventListener('click', () => {
+            safetyForm.reset();
+            document.getElementById('safety-id').value = '';
+            document.getElementById('safety-modal-title').textContent = 'Report Safety Incident / Hazard';
+            document.getElementById('safety-date').value = new Date().toISOString().split('T')[0];
+            if (safetyProjectFilter && safetyProjectFilter.value) {
+                document.getElementById('safety-project-id').value = safetyProjectFilter.value;
+            }
+            safetyModal.classList.remove('hidden');
+        });
+    }
+
+    if (safetyForm) {
+        safetyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('safety-id').value;
+            const payload = {
+                projectId: Number(document.getElementById('safety-project-id').value),
+                incidentDate: document.getElementById('safety-date').value,
+                severity: document.getElementById('safety-severity').value,
+                description: document.getElementById('safety-desc').value.trim(),
+                actionTaken: document.getElementById('safety-action').value.trim() || null,
+                status: document.getElementById('safety-status').value
+            };
+
+            try {
+                if (id) {
+                    await api.put(`/safety/${id}`, payload);
+                    showToast('Success', 'Safety report updated', 'success');
+                } else {
+                    await api.post('/safety', payload);
+                    showToast('Success', 'Safety report recorded', 'success');
+                }
+                safetyModal.classList.add('hidden');
+                loadSafetyIncidents();
+            } catch (err) {
+                showToast('Error', err.message || 'Failed to submit safety incident', 'error');
+            }
+        });
+    }
+
+    async function loadSafetyIncidents(projectId) {
+        projectId = projectId || (safetyProjectFilter ? safetyProjectFilter.value : '');
+        if (loadingSafety) loadingSafety.classList.remove('hidden');
+        if (emptySafety) emptySafety.classList.add('hidden');
+        if (safetyTableBody) safetyTableBody.innerHTML = '';
+        try {
+            const endpoint = projectId ? `/safety/project/${projectId}` : '/safety';
+            allSafetyIncidents = await api.get(endpoint) || [];
+            renderSafetyTable();
+        } catch (err) {
+            showToast('Error', 'Failed to load safety incidents: ' + err.message, 'error');
+            renderSafetyTable();
+        } finally {
+            if (loadingSafety) loadingSafety.classList.add('hidden');
+        }
+    }
+
+    function renderSafetyTable() {
+        if (!safetyTableBody) return;
+        safetyTableBody.innerHTML = '';
+        const total = allSafetyIncidents.length;
+        const open = allSafetyIncidents.filter(i => i.status === 'open').length;
+        const resolved = allSafetyIncidents.filter(i => i.status === 'closed').length;
+        const high = allSafetyIncidents.filter(i => i.severity && i.severity.toLowerCase() === 'high').length;
+
+        const elTotal = document.getElementById('stat-safety-total');
+        const elOpen = document.getElementById('stat-safety-open');
+        const elHigh = document.getElementById('stat-safety-high');
+        const elResolved = document.getElementById('stat-safety-resolved');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elOpen) elOpen.textContent = open;
+        if (elHigh) elHigh.textContent = high;
+        if (elResolved) elResolved.textContent = resolved;
+
+        if (total === 0) {
+            if (emptySafety) emptySafety.classList.remove('hidden');
+            return;
+        }
+        if (emptySafety) emptySafety.classList.add('hidden');
+
+        allSafetyIncidents.forEach(inc => {
+            const proj = projects.find(pr => pr.id === inc.projectId);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 600;">${inc.incidentDate}</td>
+                <td>${proj ? escapeHtml(proj.name) : 'Project #' + inc.projectId}</td>
+                <td>
+                    <span class="status-badge status-${(inc.severity || 'low').toLowerCase()}">
+                        ${(inc.severity || 'low').toUpperCase()}
+                    </span>
+                </td>
+                <td style="max-width: 250px;">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(inc.description)}">
+                        ${escapeHtml(inc.description)}
+                    </div>
+                </td>
+                <td style="max-width: 200px; color: var(--text-secondary);">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(inc.actionTaken || 'None')}">
+                        ${escapeHtml(inc.actionTaken || 'None')}
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge status-${inc.status}">
+                        ${inc.status === 'closed' ? 'RESOLVED' : 'OPEN'}
+                    </span>
+                </td>
+                <td style="text-align: right;">
+                    ${inc.status === 'open' ? `<button class="btn btn-sm btn-primary" onclick="resolveIncident(${inc.id})" title="Resolve Incident" style="padding:4px 8px; font-size:11px; margin-right:4px;"><i class="fa-solid fa-shield-check"></i> Resolve</button>` : ''}
+                    <button class="btn-icon" onclick="editSafetyIncident(${inc.id})" title="Edit Incident"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn-icon danger" onclick="deleteSafetyIncident(${inc.id})" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            safetyTableBody.appendChild(tr);
+        });
+        applyRoleRestrictions();
+    }
+
+    window.resolveIncident = async function(id) {
+        const action = prompt('Enter corrective action taken to mitigate hazard and prevent recurrence:');
+        if (action === null) return;
+        try {
+            await api.put(`/safety/${id}`, {
+                status: 'closed',
+                actionTaken: action.trim() || 'Corrective action completed and verified by Project Manager.'
+            });
+            showToast('Resolved', 'Safety incident marked resolved', 'success');
+            loadSafetyIncidents();
+        } catch (err) {
+            showToast('Error', 'Failed to resolve incident: ' + err.message, 'error');
+        }
+    };
+
+    window.editSafetyIncident = function(id) {
+        const inc = allSafetyIncidents.find(i => i.id === id);
+        if (!inc) return;
+        document.getElementById('safety-id').value = inc.id;
+        document.getElementById('safety-modal-title').textContent = 'Edit Safety Incident';
+        document.getElementById('safety-project-id').value = inc.projectId;
+        document.getElementById('safety-date').value = inc.incidentDate || '';
+        document.getElementById('safety-severity').value = (inc.severity || 'low').toLowerCase();
+        document.getElementById('safety-desc').value = inc.description || '';
+        document.getElementById('safety-action').value = inc.actionTaken || '';
+        document.getElementById('safety-status').value = inc.status || 'open';
+        safetyModal.classList.remove('hidden');
+    };
+
+    window.deleteSafetyIncident = async function(id) {
+        if (!confirm('Are you sure you want to delete this incident report?')) return;
+        try {
+            await api.delete(`/safety/${id}`);
+            showToast('Success', 'Safety incident deleted', 'success');
+            loadSafetyIncidents();
+        } catch (err) {
+            showToast('Error', 'Failed to delete incident: ' + err.message, 'error');
+        }
+    };
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 5. RFIs & SUBMITTALS (FULL CRUD & FORMAL REVIEW: POST, GET, PUT, DELETE)
+    // ──────────────────────────────────────────────────────────────────────
+    setupModalClose(rfiModal, btnCloseRfiModal, btnCancelRfiModal);
+    setupModalClose(rfiResponseModal, btnCloseRfiResponseModal, btnCancelRfiResponseModal);
+    setupModalClose(submittalModal, btnCloseSubmittalModal, btnCancelSubmittalModal);
+
+    if (rfisProjectFilter) {
+        rfisProjectFilter.addEventListener('change', () => loadRfisAndSubmittals());
+    }
+
+    if (btnTabRfis && btnTabSubmittals) {
+        btnTabRfis.addEventListener('click', () => {
+            btnTabRfis.classList.add('active');
+            btnTabSubmittals.classList.remove('active');
+            rfisSubview.classList.remove('hidden');
+            submittalsSubview.classList.add('hidden');
+        });
+        btnTabSubmittals.addEventListener('click', () => {
+            btnTabSubmittals.classList.add('active');
+            btnTabRfis.classList.remove('active');
+            submittalsSubview.classList.remove('hidden');
+            rfisSubview.classList.add('hidden');
+        });
+    }
+
+    if (btnAddRfi) {
+        btnAddRfi.addEventListener('click', () => {
+            rfiForm.reset();
+            document.getElementById('rfi-id').value = '';
+            document.getElementById('rfi-modal-title').textContent = 'New Request for Information (RFI)';
+            document.getElementById('rfi-number').value = 'RFI-' + String(allRfis.length + 1).padStart(3, '0');
+            if (rfisProjectFilter && rfisProjectFilter.value) {
+                document.getElementById('rfi-project-id').value = rfisProjectFilter.value;
+            }
+            rfiModal.classList.remove('hidden');
+        });
+    }
+
+    if (rfiForm) {
+        rfiForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('rfi-id').value;
+            const payload = {
+                projectId: Number(document.getElementById('rfi-project-id').value),
+                rfiNumber: document.getElementById('rfi-number').value.trim(),
+                subject: document.getElementById('rfi-subject').value.trim(),
+                ballInCourt: document.getElementById('rfi-ball').value.trim() || null,
+                assignedTo: document.getElementById('rfi-assigned').value.trim() || null,
+                dueDate: document.getElementById('rfi-due-date').value || null,
+                status: document.getElementById('rfi-status').value
+            };
+
+            try {
+                if (id) {
+                    await api.put(`/rfis/${id}`, payload);
+                    showToast('Success', 'RFI updated', 'success');
+                } else {
+                    await api.post('/rfis', payload);
+                    showToast('Success', 'RFI created', 'success');
+                }
+                rfiModal.classList.add('hidden');
+                loadRfisAndSubmittals();
+            } catch (err) {
+                showToast('Error', err.message || 'Failed to save RFI', 'error');
+            }
+        });
+    }
+
+    if (rfiResponseForm) {
+        rfiResponseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('rfi-response-id').value;
+            const responseText = document.getElementById('rfi-response-text').value.trim();
+            const status = document.getElementById('rfi-response-status').value;
+            try {
+                await api.put(`/rfis/${id}`, {
+                    response: responseText,
+                    status: status
+                });
+                showToast('Success', 'RFI response recorded', 'success');
+                rfiResponseModal.classList.add('hidden');
+                loadRfisAndSubmittals();
+            } catch (err) {
+                showToast('Error', err.message || 'Failed to record response', 'error');
+            }
+        });
+    }
+
+    if (btnAddSubmittal) {
+        btnAddSubmittal.addEventListener('click', () => {
+            submittalForm.reset();
+            document.getElementById('submittal-id').value = '';
+            document.getElementById('submittal-modal-title').textContent = 'New Submittal';
+            document.getElementById('submittal-number').value = 'SUB-' + String(allSubmittals.length + 1).padStart(3, '0');
+            if (rfisProjectFilter && rfisProjectFilter.value) {
+                document.getElementById('submittal-project-id').value = rfisProjectFilter.value;
+            }
+            submittalModal.classList.remove('hidden');
+        });
+    }
+
+    if (submittalForm) {
+        submittalForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('submittal-id').value;
+            const payload = {
+                projectId: Number(document.getElementById('submittal-project-id').value),
+                submittalNumber: document.getElementById('submittal-number').value.trim(),
+                specSection: document.getElementById('submittal-spec').value.trim(),
+                description: document.getElementById('submittal-desc').value.trim(),
+                submittedByName: document.getElementById('submittal-submitted-by').value.trim() || currentUser?.name,
+                status: document.getElementById('submittal-status').value
+            };
+
+            try {
+                if (id) {
+                    await api.put(`/submittals/${id}`, payload);
+                    showToast('Success', 'Submittal updated', 'success');
+                } else {
+                    await api.post('/submittals', payload);
+                    showToast('Success', 'Submittal registered', 'success');
+                }
+                submittalModal.classList.add('hidden');
+                loadRfisAndSubmittals();
+            } catch (err) {
+                showToast('Error', err.message || 'Failed to save submittal', 'error');
+            }
+        });
+    }
+
+    async function loadRfisAndSubmittals(projectId) {
+        projectId = projectId || (rfisProjectFilter ? rfisProjectFilter.value : '');
+        if (loadingRfis) loadingRfis.classList.remove('hidden');
+        if (loadingSubmittals) loadingSubmittals.classList.remove('hidden');
+        if (rfisTableBody) rfisTableBody.innerHTML = '';
+        if (submittalsTableBody) submittalsTableBody.innerHTML = '';
+        try {
+            const [rfis, subs] = await Promise.all([
+                api.get(projectId ? `/rfis/project/${projectId}` : '/rfis'),
+                api.get(projectId ? `/submittals/project/${projectId}` : '/submittals')
+            ]);
+            allRfis = rfis || [];
+            allSubmittals = subs || [];
+            renderRfisTable();
+            renderSubmittalsTable();
+        } catch (err) {
+            showToast('Error', 'Failed to load RFIs/Submittals: ' + err.message, 'error');
+            renderRfisTable();
+            renderSubmittalsTable();
+        } finally {
+            if (loadingRfis) loadingRfis.classList.add('hidden');
+            if (loadingSubmittals) loadingSubmittals.classList.add('hidden');
+        }
+    }
+
+    function renderRfisTable() {
+        if (!rfisTableBody) return;
+        rfisTableBody.innerHTML = '';
+        const total = allRfis.length;
+        const open = allRfis.filter(r => r.status === 'open').length;
+        const responded = allRfis.filter(r => r.status === 'responded').length;
+        const closed = allRfis.filter(r => r.status === 'closed').length;
+
+        const elTotal = document.getElementById('stat-rfi-total');
+        const elOpen = document.getElementById('stat-rfi-open');
+        const elResponded = document.getElementById('stat-rfi-responded');
+        const elClosed = document.getElementById('stat-rfi-closed');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elOpen) elOpen.textContent = open;
+        if (elResponded) elResponded.textContent = responded;
+        if (elClosed) elClosed.textContent = closed;
+
+        if (total === 0) {
+            if (emptyRfis) emptyRfis.classList.remove('hidden');
+            return;
+        }
+        if (emptyRfis) emptyRfis.classList.add('hidden');
+
+        allRfis.forEach(r => {
+            const proj = projects.find(pr => pr.id === r.projectId);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 600;">${escapeHtml(r.rfiNumber || 'RFI-' + r.id)}</td>
+                <td>${proj ? escapeHtml(proj.name) : 'Project #' + r.projectId}</td>
+                <td style="max-width: 250px;">
+                    <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(r.subject)}">
+                        ${escapeHtml(r.subject)}
+                    </div>
+                    ${r.response ? `<div style="font-size:11px; color:var(--status-active-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(r.response)}">Ans: ${escapeHtml(r.response)}</div>` : ''}
+                </td>
+                <td>${escapeHtml(r.ballInCourt || '—')}</td>
+                <td>${escapeHtml(r.assignedTo || '—')}</td>
+                <td>${r.dueDate || '—'}</td>
+                <td>
+                    <span class="status-badge status-${r.status}">
+                        ${r.status.toUpperCase()}
+                    </span>
+                </td>
+                <td style="text-align: right;">
+                    <button class="btn btn-sm btn-secondary" onclick="openRespondRfiModal(${r.id})" title="Respond / Resolve RFI" style="padding:4px 8px; font-size:11px; margin-right:4px;"><i class="fa-solid fa-reply"></i> Respond</button>
+                    <button class="btn-icon" onclick="editRfi(${r.id})" title="Edit RFI"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn-icon danger" onclick="deleteRfi(${r.id})" title="Delete RFI"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            rfisTableBody.appendChild(tr);
+        });
+        applyRoleRestrictions();
+    }
+
+    function renderSubmittalsTable() {
+        if (!submittalsTableBody) return;
+        submittalsTableBody.innerHTML = '';
+        const total = allSubmittals.length;
+        const pending = allSubmittals.filter(s => s.status === 'pending').length;
+        const approved = allSubmittals.filter(s => s.status === 'approved').length;
+        const rejected = allSubmittals.filter(s => s.status === 'rejected').length;
+
+        const elTotal = document.getElementById('stat-sub-total');
+        const elPending = document.getElementById('stat-sub-pending');
+        const elApproved = document.getElementById('stat-sub-approved');
+        const elRejected = document.getElementById('stat-sub-rejected');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elPending) elPending.textContent = pending;
+        if (elApproved) elApproved.textContent = approved;
+        if (elRejected) elRejected.textContent = rejected;
+
+        if (total === 0) {
+            if (emptySubmittals) emptySubmittals.classList.remove('hidden');
+            return;
+        }
+        if (emptySubmittals) emptySubmittals.classList.add('hidden');
+
+        allSubmittals.forEach(s => {
+            const proj = projects.find(pr => pr.id === s.projectId);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 600;">${escapeHtml(s.submittalNumber || 'SUB-' + s.id)}</td>
+                <td>${proj ? escapeHtml(proj.name) : 'Project #' + s.projectId}</td>
+                <td><span class="stat-pill">${escapeHtml(s.specSection || '—')}</span></td>
+                <td style="max-width: 250px;">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(s.description)}">
+                        ${escapeHtml(s.description)}
+                    </div>
+                </td>
+                <td>${escapeHtml(s.submittedByName || s.submittedBy || '—')}</td>
+                <td>${escapeHtml(s.reviewedBy || 'Pending')}</td>
+                <td>
+                    <span class="status-badge status-${s.status}">
+                        ${s.status.toUpperCase()}
+                    </span>
+                </td>
+                <td style="text-align: right;">
+                    ${s.status === 'pending' ? `
+                        <button class="btn btn-sm btn-primary" onclick="reviewSubmittal(${s.id}, 'approved')" title="Approve Submittal" style="padding:4px 8px; font-size:11px; margin-right:4px;"><i class="fa-solid fa-check"></i> Approve</button>
+                        <button class="btn btn-sm btn-secondary" onclick="reviewSubmittal(${s.id}, 'rejected')" title="Reject Submittal" style="padding:4px 8px; font-size:11px; margin-right:4px; color:#f87171;"><i class="fa-solid fa-xmark"></i> Reject</button>
+                    ` : ''}
+                    <button class="btn-icon" onclick="editSubmittal(${s.id})" title="Edit Submittal"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn-icon danger" onclick="deleteSubmittal(${s.id})" title="Delete Submittal"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            submittalsTableBody.appendChild(tr);
+        });
+        applyRoleRestrictions();
+    }
+
+    window.openRespondRfiModal = function(id) {
+        const rfi = allRfis.find(r => r.id === id);
+        if (!rfi) return;
+        document.getElementById('rfi-response-id').value = rfi.id;
+        document.getElementById('rfi-response-subject-display').textContent = `${rfi.rfiNumber || 'RFI'}: ${rfi.subject}`;
+        document.getElementById('rfi-response-text').value = rfi.response || '';
+        document.getElementById('rfi-response-status').value = rfi.status === 'closed' ? 'closed' : 'responded';
+        rfiResponseModal.classList.remove('hidden');
+    };
+
+    window.editRfi = function(id) {
+        const rfi = allRfis.find(r => r.id === id);
+        if (!rfi) return;
+        document.getElementById('rfi-id').value = rfi.id;
+        document.getElementById('rfi-modal-title').textContent = 'Edit RFI';
+        document.getElementById('rfi-project-id').value = rfi.projectId;
+        document.getElementById('rfi-number').value = rfi.rfiNumber || '';
+        document.getElementById('rfi-subject').value = rfi.subject || '';
+        document.getElementById('rfi-ball').value = rfi.ballInCourt || '';
+        document.getElementById('rfi-assigned').value = rfi.assignedTo || '';
+        document.getElementById('rfi-due-date').value = rfi.dueDate || '';
+        document.getElementById('rfi-status').value = rfi.status || 'open';
+        rfiModal.classList.remove('hidden');
+    };
+
+    window.deleteRfi = async function(id) {
+        if (!confirm('Are you sure you want to delete this RFI?')) return;
+        try {
+            await api.delete(`/rfis/${id}`);
+            showToast('Success', 'RFI deleted successfully', 'success');
+            loadRfisAndSubmittals();
+        } catch (err) {
+            showToast('Error', 'Failed to delete RFI: ' + err.message, 'error');
+        }
+    };
+
+    window.reviewSubmittal = async function(id, status) {
+        try {
+            await api.put(`/submittals/${id}`, {
+                status: status,
+                reviewedBy: currentUser?.name || 'Project Manager'
+            });
+            showToast('Success', `Submittal marked as ${status}`, 'success');
+            loadRfisAndSubmittals();
+        } catch (err) {
+            showToast('Error', 'Failed to review submittal: ' + err.message, 'error');
+        }
+    };
+
+    window.editSubmittal = function(id) {
+        const sub = allSubmittals.find(s => s.id === id);
+        if (!sub) return;
+        document.getElementById('submittal-id').value = sub.id;
+        document.getElementById('submittal-modal-title').textContent = 'Edit Submittal';
+        document.getElementById('submittal-project-id').value = sub.projectId;
+        document.getElementById('submittal-number').value = sub.submittalNumber || '';
+        document.getElementById('submittal-spec').value = sub.specSection || '';
+        document.getElementById('submittal-desc').value = sub.description || '';
+        document.getElementById('submittal-submitted-by').value = sub.submittedByName || sub.submittedBy || '';
+        document.getElementById('submittal-status').value = sub.status || 'pending';
+        submittalModal.classList.remove('hidden');
+    };
+
+    window.deleteSubmittal = async function(id) {
+        if (!confirm('Are you sure you want to delete this submittal?')) return;
+        try {
+            await api.delete(`/submittals/${id}`);
+            showToast('Success', 'Submittal deleted successfully', 'success');
+            loadRfisAndSubmittals();
+        } catch (err) {
+            showToast('Error', 'Failed to delete submittal: ' + err.message, 'error');
+        }
+    };
 
 });
 

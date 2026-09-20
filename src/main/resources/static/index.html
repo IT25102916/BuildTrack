@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConstructIQ - Modern Project Management</title>
-    <!-- Use Inter font for a clean, modern aesthetic -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Use Plus Jakarta Sans and Inter fonts for a sleek, modern tech aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/style.css?v=2">
+    <link rel="stylesheet" href="/css/style.css?v=3">
 </head>
 <body>
     <div class="app-container">
@@ -21,6 +21,11 @@
             <ul class="nav-links">
                 <li class="active"><a href="#" id="nav-dashboard" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
                 <li><a href="#" id="nav-projects" class="nav-link"><i class="fa-solid fa-building"></i> Projects</a></li>
+                <li><a href="#" id="nav-tasks" class="nav-link"><i class="fa-solid fa-list-check"></i> Schedule & Tasks</a></li>
+                <li><a href="#" id="nav-daily-logs" class="nav-link"><i class="fa-solid fa-clipboard-user"></i> Daily Field Logs</a></li>
+                <li><a href="#" id="nav-punch" class="nav-link"><i class="fa-solid fa-clipboard-check"></i> Punch List</a></li>
+                <li><a href="#" id="nav-safety" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Safety Incidents</a></li>
+                <li><a href="#" id="nav-rfis" class="nav-link"><i class="fa-solid fa-comments"></i> RFIs & Submittals</a></li>
                 <li><a href="#" id="nav-team" class="nav-link"><i class="fa-solid fa-users"></i> Team</a></li>
                 <li><a href="#" id="nav-documents" class="nav-link"><i class="fa-solid fa-file-contract"></i> Documents</a></li>
                 <li><a href="#" id="nav-contractors" class="nav-link"><i class="fa-solid fa-truck"></i> Contractors</a></li>
@@ -708,6 +713,413 @@
                     </div>
                 </div> <!-- End Settings View -->
 
+                <!-- ── Tasks & Schedule View ── -->
+                <div id="view-tasks" class="view-section hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Schedule & Tasks</h1>
+                            <p class="page-subtitle">Track project milestones, assignments, and critical paths</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="tasks-project-filter" class="form-control" style="width: auto; min-width: 200px;">
+                                <option value="">All Projects</option>
+                            </select>
+                            <button class="btn btn-primary" id="btn-add-task" data-requires-role="pm,admin">
+                                <i class="fa-solid fa-plus"></i> Add Task
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Task KPI Stats -->
+                    <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Total Tasks</div>
+                            <div id="stat-tasks-total" style="font-size: 24px; font-weight: 700;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">In Progress</div>
+                            <div id="stat-tasks-progress" style="font-size: 24px; font-weight: 700; color: #60a5fa;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Completed</div>
+                            <div id="stat-tasks-completed" style="font-size: 24px; font-weight: 700; color: var(--status-active-text);">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Critical / Milestones</div>
+                            <div id="stat-tasks-critical" style="font-size: 24px; font-weight: 700; color: #f87171;">0</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Task Name</th>
+                                        <th>Project</th>
+                                        <th>Timeline</th>
+                                        <th>Assigned To</th>
+                                        <th>Progress</th>
+                                        <th>Status</th>
+                                        <th style="text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tasks-table-body">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                            <div id="loading-spinner-tasks" class="loading-spinner hidden">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading tasks...
+                            </div>
+                            <div id="empty-state-tasks" class="empty-state hidden">
+                                <i class="fa-solid fa-list-check"></i>
+                                <p>No tasks found for this project. Click 'Add Task' to create one.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Tasks View -->
+
+                <!-- ── Daily Field Logs View ── -->
+                <div id="view-daily-logs" class="view-section hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Daily Field Logs</h1>
+                            <p class="page-subtitle">Site conditions, manpower count, work performed, and formal sign-offs</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="daily-logs-project-filter" class="form-control" style="width: auto; min-width: 200px;">
+                                <option value="">All Projects</option>
+                            </select>
+                            <button class="btn btn-primary" id="btn-add-daily-log" data-requires-role="site_engineer,pm,admin">
+                                <i class="fa-solid fa-plus"></i> New Daily Log
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Daily Logs KPI Stats -->
+                    <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Total Site Logs</div>
+                            <div id="stat-logs-total" style="font-size: 24px; font-weight: 700;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Signed & Approved</div>
+                            <div id="stat-logs-signed" style="font-size: 24px; font-weight: 700; color: var(--status-active-text);">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Pending Sign-Off</div>
+                            <div id="stat-logs-pending" style="font-size: 24px; font-weight: 700; color: #fbbf24;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Total Manpower Tracked</div>
+                            <div id="stat-logs-manpower" style="font-size: 24px; font-weight: 700; color: var(--accent-primary);">0</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Project</th>
+                                        <th>Weather & Temp</th>
+                                        <th>Manpower</th>
+                                        <th>Work Performed</th>
+                                        <th>Delays / Notes</th>
+                                        <th>Sign-off Status</th>
+                                        <th style="text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="daily-logs-table-body">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                            <div id="loading-spinner-daily-logs" class="loading-spinner hidden">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading daily logs...
+                            </div>
+                            <div id="empty-state-daily-logs" class="empty-state hidden">
+                                <i class="fa-solid fa-clipboard-user"></i>
+                                <p>No daily field logs found. Click 'New Daily Log' to record site activity.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Daily Logs View -->
+
+                <!-- ── Punch List View ── -->
+                <div id="view-punch" class="view-section hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Punch List & Quality Control</h1>
+                            <p class="page-subtitle">Track defects, subcontractor corrections, and final completion sign-offs</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="punch-project-filter" class="form-control" style="width: auto; min-width: 200px;">
+                                <option value="">All Projects</option>
+                            </select>
+                            <button class="btn btn-primary" id="btn-add-punch" data-requires-role="site_engineer,pm,admin">
+                                <i class="fa-solid fa-plus"></i> New Punch Item
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Punch KPI Stats -->
+                    <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Total Defects</div>
+                            <div id="stat-punch-total" style="font-size: 24px; font-weight: 700;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Open</div>
+                            <div id="stat-punch-open" style="font-size: 24px; font-weight: 700; color: #fbbf24;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Ready for Review</div>
+                            <div id="stat-punch-review" style="font-size: 24px; font-weight: 700; color: #60a5fa;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Closed</div>
+                            <div id="stat-punch-closed" style="font-size: 24px; font-weight: 700; color: var(--status-active-text);">0</div>
+                        </div>
+                    </div>
+
+                    <div class="tabs" style="margin-bottom: 15px;">
+                        <button class="btn btn-secondary active" id="btn-punch-filter-all">All Items</button>
+                        <button class="btn btn-secondary" id="btn-punch-filter-open">Open</button>
+                        <button class="btn btn-secondary" id="btn-punch-filter-review">Ready for Review</button>
+                        <button class="btn btn-secondary" id="btn-punch-filter-closed">Closed</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item #</th>
+                                        <th>Project</th>
+                                        <th>Location</th>
+                                        <th>Description</th>
+                                        <th>Responsible Party</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th style="text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="punch-table-body">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                            <div id="loading-spinner-punch" class="loading-spinner hidden">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading punch items...
+                            </div>
+                            <div id="empty-state-punch" class="empty-state hidden">
+                                <i class="fa-solid fa-clipboard-check"></i>
+                                <p>No punch items found. Click 'New Punch Item' to report a defect.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Punch List View -->
+
+                <!-- ── Safety Incidents View ── -->
+                <div id="view-safety" class="view-section hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Safety & Incident Management</h1>
+                            <p class="page-subtitle">OSHA / job site safety incidents, hazard reporting, and corrective action logs</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="safety-project-filter" class="form-control" style="width: auto; min-width: 200px;">
+                                <option value="">All Projects</option>
+                            </select>
+                            <button class="btn btn-primary" id="btn-add-safety" data-requires-role="site_engineer,pm,admin">
+                                <i class="fa-solid fa-plus"></i> Report Incident
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Safety KPI Stats -->
+                    <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Total Incidents</div>
+                            <div id="stat-safety-total" style="font-size: 24px; font-weight: 700;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Open Hazards</div>
+                            <div id="stat-safety-open" style="font-size: 24px; font-weight: 700; color: #fbbf24;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">High / Critical</div>
+                            <div id="stat-safety-high" style="font-size: 24px; font-weight: 700; color: #f87171;">0</div>
+                        </div>
+                        <div class="card" style="padding: 15px;">
+                            <div style="color: var(--text-secondary); font-size: 13px;">Resolved</div>
+                            <div id="stat-safety-resolved" style="font-size: 24px; font-weight: 700; color: var(--status-active-text);">0</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Project</th>
+                                        <th>Severity</th>
+                                        <th>Incident Description</th>
+                                        <th>Action Taken</th>
+                                        <th>Status</th>
+                                        <th style="text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="safety-table-body">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                            <div id="loading-spinner-safety" class="loading-spinner hidden">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Loading safety logs...
+                            </div>
+                            <div id="empty-state-safety" class="empty-state hidden">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <p>No safety incidents recorded. Good job keeping the site safe!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Safety View -->
+
+                <!-- ── RFIs & Submittals View ── -->
+                <div id="view-rfis" class="view-section hidden">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">RFIs & Submittals</h1>
+                            <p class="page-subtitle">Requests for Information, technical submittals, and architectural reviews</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="rfis-project-filter" class="form-control" style="width: auto; min-width: 200px;">
+                                <option value="">All Projects</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="tabs" style="margin-bottom: 20px;">
+                        <button class="btn btn-secondary active" id="btn-tab-rfis">Requests for Information (RFIs)</button>
+                        <button class="btn btn-secondary" id="btn-tab-submittals">Submittals</button>
+                    </div>
+
+                    <!-- RFIs Sub-Tab -->
+                    <div id="rfis-subview">
+                        <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div class="card" style="padding: 15px;">
+                                <div style="color: var(--text-secondary); font-size: 13px;">Total RFIs</div>
+                                <div id="stat-rfi-total" style="font-size: 24px; font-weight: 700;">0</div>
+                            </div>
+                            <div class="card" style="padding: 15px;">
+                                <div style="color: var(--text-secondary); font-size: 13px;">Open</div>
+                                <div id="stat-rfi-open" style="font-size: 24px; font-weight: 700; color: #fbbf24;">0</div>
+                            </div>
+                            <div class="card" style="padding: 15px;">
+                                <div style="color: var(--text-secondary); font-size: 13px;">Responded</div>
+                                <div id="stat-rfi-responded" style="font-size: 24px; font-weight: 700; color: #60a5fa;">0</div>
+                            </div>
+                            <div class="card" style="padding: 15px;">
+                                <div style="color: var(--text-secondary); font-size: 13px;">Closed</div>
+                                <div id="stat-rfi-closed" style="font-size: 24px; font-weight: 700; color: var(--status-active-text);">0</div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                <h3>RFI Register</h3>
+                                <button class="btn btn-primary" id="btn-add-rfi">
+                                    <i class="fa-solid fa-plus"></i> New RFI
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>RFI #</th>
+                                            <th>Project</th>
+                                            <th>Subject</th>
+                                            <th>Ball in Court</th>
+                                            <th>Assigned To</th>
+                                            <th>Due Date</th>
+                                            <th>Status</th>
+                                            <th style="text-align: right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rfis-table-body">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                                <div id="loading-spinner-rfis" class="loading-spinner hidden">
+                                    <i class="fa-solid fa-circle-notch fa-spin"></i> Loading RFIs...
+                                </div>
+                                <div id="empty-state-rfis" class="empty-state hidden">
+                                    <i class="fa-solid fa-comments"></i>
+                                    <p>No RFIs recorded. Click 'New RFI' to initiate a clarification.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submittals Sub-Tab -->
+                    <div id="submittals-subview" class="hidden">
+                        <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div class="card" style="padding: 15px;">
+                                <div style="color: var(--text-secondary); font-size: 13px;">Total Submittals</div>
+                                <div id="stat-sub-total" style="font-size: 24px; font-weight: 700;">0</div>
+                            </div>
+                            <div class="card" style="padding: 15px;">
+                                <div style="color: var(--text-secondary); font-size: 13px;">Pending Review</div>
+                                <div id="stat-sub-pending" style="font-size: 24px; font-weight: 700; color: #fbbf24;">0</div>
+                            </div>
+                            <div class="card" style="padding: 15px;">
+                                <div style="color: var(--text-secondary); font-size: 13px;">Approved</div>
+                                <div id="stat-sub-approved" style="font-size: 24px; font-weight: 700; color: var(--status-active-text);">0</div>
+                            </div>
+                            <div class="card" style="padding: 15px;">
+                                <div style="color: var(--text-secondary); font-size: 13px;">Rejected</div>
+                                <div id="stat-sub-rejected" style="font-size: 24px; font-weight: 700; color: #f87171;">0</div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                <h3>Submittal Register</h3>
+                                <button class="btn btn-primary" id="btn-add-submittal">
+                                    <i class="fa-solid fa-plus"></i> New Submittal
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Submittal #</th>
+                                            <th>Project</th>
+                                            <th>Spec Section</th>
+                                            <th>Description</th>
+                                            <th>Submitted By</th>
+                                            <th>Reviewed By</th>
+                                            <th>Status</th>
+                                            <th style="text-align: right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="submittals-table-body">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                                <div id="loading-spinner-submittals" class="loading-spinner hidden">
+                                    <i class="fa-solid fa-circle-notch fa-spin"></i> Loading submittals...
+                                </div>
+                                <div id="empty-state-submittals" class="empty-state hidden">
+                                    <i class="fa-solid fa-file-shield"></i>
+                                    <p>No submittals found. Click 'New Submittal' to register shop drawings/samples.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End RFIs View -->
+
             </div>
         </main>
     </div>
@@ -1142,6 +1554,357 @@
         </div>
     </div>
 
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="task-modal-title">New Task</h2>
+                <button class="close-btn" id="btn-close-task-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                <div class="form-group">
+                    <label>Project <span class="required">*</span></label>
+                    <select id="task-project-id" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Task Name <span class="required">*</span></label>
+                    <input type="text" id="task-name" required placeholder="e.g. Foundation Pouring">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="task-start-date">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" id="task-end-date">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Assigned To</label>
+                        <select id="task-assigned-user"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status <span class="required">*</span></label>
+                        <select id="task-status" required>
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Progress (% Complete): <span id="task-percent-display">0%</span></label>
+                    <input type="range" id="task-percent" min="0" max="100" value="0" style="width:100%;" oninput="document.getElementById('task-percent-display').textContent = this.value + '%'">
+                </div>
+                <div style="display:flex; gap: 20px; margin-bottom: 20px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" id="task-is-milestone" style="width:auto;"> Is Milestone
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" id="task-is-critical" style="width:auto;"> Critical Path
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-task-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-task">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Daily Log Modal -->
+    <div id="daily-log-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="daily-log-modal-title">New Daily Field Log</h2>
+                <button class="close-btn" id="btn-close-daily-log-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="daily-log-form">
+                <input type="hidden" id="log-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Project <span class="required">*</span></label>
+                        <select id="log-project-id" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Log Date <span class="required">*</span></label>
+                        <input type="date" id="log-date" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Weather Condition</label>
+                        <select id="log-weather">
+                            <option value="Sunny">☀️ Sunny / Clear</option>
+                            <option value="Cloudy">⛅ Overcast / Cloudy</option>
+                            <option value="Rain">🌧️ Rain / Wet</option>
+                            <option value="Windy">💨 High Winds</option>
+                            <option value="Extreme">❄️ Extreme Weather</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Temperature</label>
+                        <input type="text" id="log-temp" placeholder="e.g. 74°F / 23°C">
+                    </div>
+                    <div class="form-group">
+                        <label>Manpower Count <span class="required">*</span></label>
+                        <input type="number" id="log-manpower" min="0" value="1" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Work Performed Summary <span class="required">*</span></label>
+                    <textarea id="log-work" rows="3" required placeholder="Describe work completed today, crews active, concrete poured, etc."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Delays / Site Issues</label>
+                    <textarea id="log-delays" rows="2" placeholder="Note any weather delays, inspection holdups, or subcontractor absences"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-daily-log-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-daily-log">Save Daily Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Punch Item Modal -->
+    <div id="punch-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="punch-modal-title">New Punch Item</h2>
+                <button class="close-btn" id="btn-close-punch-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="punch-form">
+                <input type="hidden" id="punch-id">
+                <div class="form-group">
+                    <label>Project <span class="required">*</span></label>
+                    <select id="punch-project-id" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Location on Site <span class="required">*</span></label>
+                    <input type="text" id="punch-location" required placeholder="e.g. 2nd Floor, Room 204, East Wall">
+                </div>
+                <div class="form-group">
+                    <label>Defect Description <span class="required">*</span></label>
+                    <textarea id="punch-description" rows="3" required placeholder="Describe the item needing repair or rework"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Responsible Party</label>
+                        <input type="text" id="punch-responsible" placeholder="e.g. Prime Drywall LLC">
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" id="punch-due-date">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Status <span class="required">*</span></label>
+                    <select id="punch-status" required>
+                        <option value="open">Open</option>
+                        <option value="ready_review">Ready for Review</option>
+                        <option value="closed">Closed / Approved</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-punch-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-punch">Save Punch Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Safety Incident Modal -->
+    <div id="safety-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="safety-modal-title">Report Safety Incident / Hazard</h2>
+                <button class="close-btn" id="btn-close-safety-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="safety-form">
+                <input type="hidden" id="safety-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Project <span class="required">*</span></label>
+                        <select id="safety-project-id" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Incident Date <span class="required">*</span></label>
+                        <input type="date" id="safety-date" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Severity <span class="required">*</span></label>
+                        <select id="safety-severity" required>
+                            <option value="low">Low (Near-miss / Minor)</option>
+                            <option value="medium">Medium (First-aid required)</option>
+                            <option value="high">High (Lost-time / OSHA Reportable)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status <span class="required">*</span></label>
+                        <select id="safety-status" required>
+                            <option value="open">Open / Under Investigation</option>
+                            <option value="closed">Closed / Resolved</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Incident Description <span class="required">*</span></label>
+                    <textarea id="safety-desc" rows="3" required placeholder="Detail what happened, location, personnel involved"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Corrective Action Taken</label>
+                    <textarea id="safety-action" rows="2" placeholder="Action taken to mitigate hazard or prevent recurrence"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-safety-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-safety">Submit Safety Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- RFI Modal -->
+    <div id="rfi-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="rfi-modal-title">New Request for Information (RFI)</h2>
+                <button class="close-btn" id="btn-close-rfi-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="rfi-form">
+                <input type="hidden" id="rfi-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Project <span class="required">*</span></label>
+                        <select id="rfi-project-id" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>RFI Number <span class="required">*</span></label>
+                        <input type="text" id="rfi-number" required placeholder="e.g. RFI-001">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Subject / Clarification Request <span class="required">*</span></label>
+                    <textarea id="rfi-subject" rows="3" required placeholder="Describe technical drawing discrepancy, specification conflict, or question"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ball in Court</label>
+                        <input type="text" id="rfi-ball" placeholder="e.g. Structural Engineer / Architect">
+                    </div>
+                    <div class="form-group">
+                        <label>Assigned To</label>
+                        <input type="text" id="rfi-assigned" placeholder="e.g. Jane Architect">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" id="rfi-due-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Status <span class="required">*</span></label>
+                        <select id="rfi-status" required>
+                            <option value="open">Open</option>
+                            <option value="responded">Responded</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-rfi-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-rfi">Save RFI</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- RFI Response Modal -->
+    <div id="rfi-response-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Respond to RFI</h2>
+                <button class="close-btn" id="btn-close-rfi-response-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="rfi-response-form">
+                <input type="hidden" id="rfi-response-id">
+                <div class="form-group">
+                    <label>RFI Subject</label>
+                    <div id="rfi-response-subject-display" style="padding: 10px; background: var(--bg-main); border-radius: 6px; font-size: 13px; color: var(--text-primary); margin-bottom: 15px;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Official Response / Architectural Clarification <span class="required">*</span></label>
+                    <textarea id="rfi-response-text" rows="4" required placeholder="Provide formal resolution, drawing references, or spec addendum instructions"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Resolution Status</label>
+                    <select id="rfi-response-status" required>
+                        <option value="responded">Responded (Pending Confirmation)</option>
+                        <option value="closed">Closed & Resolved</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-rfi-response-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Response</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Submittal Modal -->
+    <div id="submittal-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="submittal-modal-title">New Submittal</h2>
+                <button class="close-btn" id="btn-close-submittal-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="submittal-form">
+                <input type="hidden" id="submittal-id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Project <span class="required">*</span></label>
+                        <select id="submittal-project-id" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Submittal Number <span class="required">*</span></label>
+                        <input type="text" id="submittal-number" required placeholder="e.g. SUB-001">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Spec Section (CSI Code) <span class="required">*</span></label>
+                    <input type="text" id="submittal-spec" required placeholder="e.g. 03 30 00 (Cast-in-Place Concrete)">
+                </div>
+                <div class="form-group">
+                    <label>Description / Item Details <span class="required">*</span></label>
+                    <textarea id="submittal-desc" rows="3" required placeholder="Describe sample, product data sheet, or shop drawing package"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Submitted By</label>
+                        <input type="text" id="submittal-submitted-by" placeholder="e.g. Subcontractor Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Status <span class="required">*</span></label>
+                        <select id="submittal-status" required>
+                            <option value="pending">Pending Review</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected / Revise</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-submittal-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-submittal">Save Submittal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Login Modal -->
     <div id="login-modal" class="modal-overlay" style="background: rgba(0,0,0,0.8); z-index: 10000;">
         <div class="modal-content" style="max-width: 400px; margin-top: 15vh;">
@@ -1202,6 +1965,6 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/api.js"></script>
-    <script src="/js/app.js?v=6"></script>
+    <script src="/js/app.js?v=7"></script>
 </body>
 </html>
