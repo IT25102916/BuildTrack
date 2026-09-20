@@ -33,11 +33,17 @@ public class SiteEngineerIntegrationTest {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private com.constructiq.repository.UserRepository userRepository;
+
     @Test
     public void testSiteEngineerWorkflow() throws Exception {
+        com.constructiq.model.User user = userRepository.findByEmail("admin@constructiq.com").orElseThrow();
+
         // 1. Create a project to work with
         Project project = new Project();
         project.setName("Test Site Engineering");
+        project.setAddress("123 Test Street");
         project.setStatus("ongoing");
         project.setStartDate(LocalDate.now());
         project.setEndDate(LocalDate.now().plusMonths(6));
@@ -48,10 +54,11 @@ public class SiteEngineerIntegrationTest {
         Issue issue = new Issue();
         issue.setProjectId(project.getId());
         issue.setDescription("Heavy rain blocking site access");
-        issue.setReportedByUserId(1L);
+        issue.setReportedByUserId(user.getId());
         issue.setStatus("OPEN");
         
         mockMvc.perform(post("/api/issues")
+                .sessionAttr("userId", user.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(issue)))
                 .andExpect(status().isOk())
@@ -62,10 +69,11 @@ public class SiteEngineerIntegrationTest {
         MaterialRequest mr = new MaterialRequest();
         mr.setProjectId(project.getId());
         mr.setMaterialDescription("Cement Bags");
-        mr.setRequestedByUserId(1L);
+        mr.setRequestedByUserId(user.getId());
         mr.setRequestedByName("Site Engineer");
         
         mockMvc.perform(post("/api/procurement/material-requests")
+                .sessionAttr("userId", user.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mr)))
                 .andExpect(status().isOk())

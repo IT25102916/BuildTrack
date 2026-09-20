@@ -13,10 +13,8 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Project project;
+    @Column(name = "project_id", nullable = false)
+    private Long projectId;
 
     @Column(nullable = false)
     private String type = "Expense";
@@ -42,9 +40,9 @@ public class Transaction {
     public Transaction() {
     }
 
-    public Transaction(Long id, Project project, String type, String category, BigDecimal amount, LocalDate transactionDate, String description, Long referenceId, LocalDateTime createdAt) {
+    public Transaction(Long id, Long projectId, String type, String category, BigDecimal amount, LocalDate transactionDate, String description, Long referenceId, LocalDateTime createdAt) {
         this.id = id;
-        this.project = project;
+        this.projectId = projectId;
         this.type = type;
         this.category = category;
         this.amount = amount;
@@ -62,12 +60,12 @@ public class Transaction {
         this.id = id;
     }
 
-    public Project getProject() {
-        return project;
+    public Long getProjectId() {
+        return projectId;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
     public String getType() {
