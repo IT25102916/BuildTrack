@@ -7,5 +7,7 @@ import java.util.List;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     List<Transaction> findByProjectId(Long projectId);
     List<Transaction> findByCategory(String category);
+    List<Transaction> findByType(String type);
     List<Transaction> findByProjectIdAndCategory(Long projectId, String category);
+    List<Transaction> findByProjectIdAndType(Long projectId, String type);
 }

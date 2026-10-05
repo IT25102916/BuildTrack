@@ -13,15 +13,11 @@ public class Invoice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Project project;
+    @Column(name = "project_id", nullable = false)
+    private Long projectId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supplier_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Supplier supplier;
+    @Column(name = "supplier_id")
+    private Long supplierId;
 
     @Column(name = "invoice_number", nullable = false)
     private String invoiceNumber;
@@ -41,10 +37,10 @@ public class Invoice {
     public Invoice() {
     }
 
-    public Invoice(Long id, Project project, Supplier supplier, String invoiceNumber, BigDecimal amount, LocalDate dueDate, String status, LocalDateTime createdAt) {
+    public Invoice(Long id, Long projectId, Long supplierId, String invoiceNumber, BigDecimal amount, LocalDate dueDate, String status, LocalDateTime createdAt) {
         this.id = id;
-        this.project = project;
-        this.supplier = supplier;
+        this.projectId = projectId;
+        this.supplierId = supplierId;
         this.invoiceNumber = invoiceNumber;
         this.amount = amount;
         this.dueDate = dueDate;
@@ -60,20 +56,20 @@ public class Invoice {
         this.id = id;
     }
 
-    public Project getProject() {
-        return project;
+    public Long getProjectId() {
+        return projectId;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
-    public Supplier getSupplier() {
-        return supplier;
+    public Long getSupplierId() {
+        return supplierId;
     }
 
-    public void setSupplier(Supplier supplier) {
-        this.supplier = supplier;
+    public void setSupplierId(Long supplierId) {
+        this.supplierId = supplierId;
     }
 
     public String getInvoiceNumber() {

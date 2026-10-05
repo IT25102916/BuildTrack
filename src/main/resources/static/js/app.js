@@ -656,7 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 invoiceModal.classList.add('hidden');
                 loadInvoices();
-            } catch(e) { alert('Error saving invoice'); }
+            } catch(e) { alert('Error saving invoice: ' + (e.message || 'Unknown error')); }
         });
     }
 
@@ -679,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     window.deleteInvoice = async (id) => {
         if(confirm('Are you sure you want to delete this invoice?')) {
-            try { await api.delete('/finance/invoices/' + id); loadInvoices(); } catch(e) { alert('Error deleting'); }
+            try { await api.delete('/finance/invoices/' + id); loadInvoices(); } catch(e) { alert('Error deleting: ' + (e.message || 'Unknown error')); }
         }
     };
     window.approveInvoice = async function(id) {
@@ -708,6 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('transaction-form').reset();
             document.getElementById('transaction-id').value = '';
             document.getElementById('transaction-type').value = 'PAYROLL';
+            document.getElementById('transaction-category').value = 'Payroll';
             document.getElementById('transaction-modal-title').textContent = 'Add Payroll Payment';
             transactionModal.classList.remove('hidden');
         });
@@ -731,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 transactionModal.classList.add('hidden');
                 if(data.type === 'PAYROLL') loadPayroll(); else loadTransactions();
-            } catch(e) { alert('Error saving transaction'); }
+            } catch(e) { alert('Error saving transaction: ' + (e.message || 'Unknown error')); }
         });
     }
 
@@ -754,7 +755,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     window.deleteTransaction = async (id) => {
         if(confirm('Are you sure you want to delete this transaction?')) {
-            try { await api.delete('/finance/transactions/' + id); loadTransactions(); loadPayroll(); } catch(e) { alert('Error deleting'); }
+            try { await api.delete('/finance/transactions/' + id); loadTransactions(); loadPayroll(); } catch(e) { alert('Error deleting: ' + (e.message || 'Unknown error')); }
         }
     };
 
