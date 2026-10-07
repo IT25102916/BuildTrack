@@ -29,8 +29,15 @@ public class AttendanceController {
     }
 
     @PostMapping("/clock-in")
-    @RequireRole({"admin", "site_engineer", "pm"})
+    @RequireRole({"admin", "pm", "project manager", "site_engineer", "site engineer", "procurement", "inventory_manager", "inventory"})
     public ResponseEntity<Attendance> clockIn(@RequestBody Attendance attendance) {
+        Long userId = (attendance.getUser() != null) ? attendance.getUser().getId() : null;
+        if (userId != null) {
+            java.util.Optional<Attendance> existing = attendanceRepository.findByUserIdAndWorkDate(userId, LocalDate.now());
+            if (existing.isPresent()) {
+                return ResponseEntity.ok(existing.get());
+            }
+        }
         attendance.setWorkDate(LocalDate.now());
         attendance.setClockIn(LocalDateTime.now());
         attendance.setStatus("Present");
@@ -38,7 +45,7 @@ public class AttendanceController {
     }
 
     @PutMapping("/{id}/clock-out")
-    @RequireRole({"admin", "site_engineer", "pm"})
+    @RequireRole({"admin", "pm", "project manager", "site_engineer", "site engineer", "procurement", "inventory_manager", "inventory"})
     public ResponseEntity<Attendance> clockOut(@PathVariable Long id) {
         return attendanceRepository.findById(id).map(a -> {
             a.setClockOut(LocalDateTime.now());

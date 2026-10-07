@@ -94,6 +94,7 @@ body {
 .app-container {
     display: flex;
     height: 100vh;
+    max-width: 100vw;
     overflow: hidden;
 }
 
@@ -116,6 +117,18 @@ body {
     gap: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     background: linear-gradient(180deg, rgba(37, 99, 235, 0.12) 0%, transparent 100%);
+}
+
+.sidebar-logo-img {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+    transition: transform 0.25s ease;
+}
+
+.sidebar-header:hover .sidebar-logo-img {
+    transform: scale(1.08);
 }
 
 .logo-icon {
@@ -196,6 +209,9 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 0;
+    width: 100%;
     position: relative;
 }
 
@@ -206,12 +222,17 @@ body {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(6, 8, 15, 0.80);
+    background: rgba(4, 6, 12, 0.96);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 100;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .search-bar {
@@ -241,15 +262,30 @@ body {
     color: #38bdf8;
 }
 
-.search-bar input {
-    background: transparent;
-    border: none;
+.search-bar input,
+.search-bar input[type="text"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
     color: #ffffff;
     margin-left: 10px;
-    outline: none;
+    outline: none !important;
     width: 100%;
     font-size: 13.5px;
     font-family: inherit;
+    line-height: normal;
+}
+
+.search-bar input:focus,
+.search-bar input[type="text"]:focus {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
 
 .search-bar input::placeholder {
@@ -267,7 +303,7 @@ body {
     cursor: pointer;
     color: var(--text-secondary);
     font-size: 16px;
-    transition: color 0.2s;
+    transition: all 0.2s ease;
     width: 36px;
     height: 36px;
     display: flex;
@@ -276,25 +312,250 @@ body {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.06);
+    user-select: none;
 }
 
-.notification-bell:hover { 
+.notification-bell:hover,
+.notification-bell.active { 
     color: #ffffff;
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
 }
 
-.badge {
+.notification-bell .badge {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: -3px;
+    right: -3px;
     background-color: #ef4444;
     color: white;
     font-size: 10px;
-    padding: 1px 5px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 9px;
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+    border: 1.5px solid #090e1a;
+    transition: all 0.2s ease;
+}
+
+/* ── Inline Badges ── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.badge-success {
+    background-color: rgba(16, 185, 129, 0.16);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.badge-warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-danger {
+    background-color: rgba(239, 68, 68, 0.16);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* ── Notification Dropdown Menu ── */
+.notification-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: -80px;
+    width: 360px;
+    max-height: 480px;
+    background: #0b1120;
+    border: 1px solid rgba(59, 130, 246, 0.28);
+    border-radius: 12px;
+    box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.95), 0 0 25px rgba(37, 99, 235, 0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    overflow: hidden;
+    animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: default;
+    text-align: left;
+}
+
+.notification-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: 93px;
+    width: 9px;
+    height: 9px;
+    background: #0e1628;
+    border-left: 1px solid rgba(59, 130, 246, 0.28);
+    border-top: 1px solid rgba(59, 130, 246, 0.28);
+    transform: rotate(45deg);
+    z-index: 12;
+}
+
+.notification-dropdown.hidden {
+    display: none !important;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.notification-dropdown-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0e1628;
+    position: relative;
+    z-index: 11;
+}
+
+.notification-dropdown-header h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-count-badge {
+    background: rgba(37, 99, 235, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    font-size: 10px;
+    padding: 1px 6px;
     border-radius: 10px;
-    font-weight: bold;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    font-weight: 600;
+}
+
+.notification-mark-all {
+    background: none;
+    border: none;
+    color: #60a5fa;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+    font-weight: 500;
+}
+
+.notification-mark-all:hover {
+    background: rgba(96, 165, 250, 0.15);
+    color: #93c5fd;
+}
+
+.notification-list {
+    overflow-y: auto;
+    max-height: 360px;
+    padding: 4px 0;
+}
+
+.notification-item {
+    padding: 11px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.15s ease;
+    cursor: pointer;
+    position: relative;
+    text-decoration: none;
+}
+
+.notification-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.notification-item.unread {
+    background: rgba(37, 99, 235, 0.09);
+}
+
+.notification-item.unread:hover {
+    background: rgba(37, 99, 235, 0.14);
+}
+
+.notification-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-msg {
+    font-size: 12px;
+    color: #e2e8f0;
+    line-height: 1.4;
+    margin: 0 0 4px 0;
+    word-break: break-word;
+}
+
+.notification-time {
+    font-size: 10.5px;
+    color: #64748b;
+    display: block;
+}
+
+.notification-unread-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #3b82f6;
+    box-shadow: 0 0 6px #3b82f6;
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+.notification-empty {
+    padding: 36px 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.notification-empty i {
+    font-size: 26px;
+    margin-bottom: 8px;
+    display: block;
+    color: #334155;
 }
 
 .avatar {
@@ -325,6 +586,15 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.view-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .page-header {
@@ -332,6 +602,8 @@ body {
     justify-content: space-between;
     align-items: flex-end;
     margin-bottom: 28px;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .page-title {
@@ -366,6 +638,9 @@ body {
     padding: 24px;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .card:hover {
@@ -485,8 +760,15 @@ body {
 /* ── Data Tables (Modern High-Contrast) ── */
 .table-responsive {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+/* Fallback: ensure any card containing a table permits internal horizontal scrolling */
+.card:has(.data-table) {
+    overflow-x: auto;
 }
 
 .data-table {
@@ -706,6 +988,114 @@ input[type="range"] {
     pointer-events: none;
 }
 
+/* ── Stealth Dark Background with Random Moving Blue Glow ── */
+.login-screen-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10000 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #020409 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Primary Moving Blue Glow Orb */
+.login-screen-backdrop::before {
+    content: '';
+    position: absolute;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.36) 0%, rgba(29, 78, 216, 0.16) 42%, transparent 72%);
+    filter: blur(85px);
+    pointer-events: none;
+    z-index: 0;
+    animation: driftBlueGlow1 22s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+
+/* Secondary Ambient Blue Glow Orb (counter-drifting) */
+.login-screen-backdrop::after {
+    content: '';
+    position: absolute;
+    width: 440px;
+    height: 440px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.26) 0%, rgba(30, 64, 175, 0.12) 45%, transparent 70%);
+    filter: blur(90px);
+    pointer-events: none;
+    z-index: 0;
+    animation: driftBlueGlow2 28s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+
+@keyframes driftBlueGlow1 {
+    0% {
+        transform: translate(-32vw, -28vh) scale(1);
+    }
+    22% {
+        transform: translate(26vw, -18vh) scale(1.18);
+    }
+    48% {
+        transform: translate(28vw, 24vh) scale(0.92);
+    }
+    72% {
+        transform: translate(-18vw, 26vh) scale(1.14);
+    }
+    88% {
+        transform: translate(-4vw, -4vh) scale(1.28);
+    }
+    100% {
+        transform: translate(-32vw, -28vh) scale(1);
+    }
+}
+
+@keyframes driftBlueGlow2 {
+    0% {
+        transform: translate(28vw, 22vh) scale(1.1);
+    }
+    26% {
+        transform: translate(-22vw, 18vh) scale(0.88);
+    }
+    52% {
+        transform: translate(-28vw, -24vh) scale(1.22);
+    }
+    78% {
+        transform: translate(18vw, -25vh) scale(0.96);
+    }
+    100% {
+        transform: translate(28vw, 22vh) scale(1.1);
+    }
+}
+
+/* Login card elevated with subtle glassmorphic glow */
+.login-screen-backdrop .modal-content {
+    position: relative;
+    z-index: 2;
+    margin-top: 0 !important;
+    background: rgba(9, 14, 28, 0.92) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(59, 130, 246, 0.28) !important;
+    box-shadow: 
+        0 25px 60px -12px rgba(0, 0, 0, 0.95),
+        0 0 50px -5px rgba(37, 99, 235, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+    animation: loginCardPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loginCardPop {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .modal-content {
     background: #090d18;
     background-image: 
@@ -910,3 +1300,5 @@ input[type="range"] {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(59, 130, 246, 0.5);
 }
+
+

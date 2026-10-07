@@ -92,8 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    let isLoggingIn = false;
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (isLoggingIn) return;
+        
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
         
@@ -103,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnText.textContent = 'Signing in...';
         spinner.classList.remove('hidden');
         loginError.textContent = '';
+        isLoggingIn = true;
         
         try {
             currentUser = await api.post('/auth/login', { email, password });
@@ -113,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             btnText.textContent = 'Sign In';
             spinner.classList.add('hidden');
+            isLoggingIn = false;
         }
     });
 
@@ -120,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await api.post('/auth/logout');
             currentUser = null;
+            resetNotificationSystem();
             loginModal.classList.remove('hidden');
         } catch (error) {
             showToast('Error', 'Failed to log out', 'error');
@@ -132,6 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('current-user-role').textContent = currentUser.role;
         document.getElementById('current-user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=3b82f6&color=fff`;
         
+        // Initialize Notification System
+        initNotificationSystem();
+
         // Render Dashboard
         renderDashboard();
         
@@ -152,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         } else if (role === 'site_engineer') {
-            [navProjects, navTasks, navDailyLogs, navPunch, navSafety, navRfis, navDocuments, navReports].forEach(nav => {
+            [navProjects, navTasks, navDailyLogs, navPunch, navSafety, navRfis, navTeam, navDocuments, navReports].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         } else if (role === 'subcontractor') {
@@ -164,15 +173,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         } else if (role === 'procurement') {
-            [navProjects, navTasks, navInventory, navContractors, navReports].forEach(nav => {
+            [navProjects, navTasks, navInventory, navTeam, navContractors, navReports].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         } else if (role === 'finance' || role === 'finance executive') {
             [navProjects, navFinance, navReports, navAnalytics].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
-        } else if (role === 'inventory_manager') {
-            [navProjects, navInventory, navReports].forEach(nav => {
+        } else if (role === 'inventory_manager' || role === 'inventory') {
+            [navProjects, navInventory, navTeam, navReports].forEach(nav => {
                 if(nav && nav.parentElement) nav.parentElement.style.display = 'block';
             });
         }
@@ -247,7 +256,53 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size:14px; color:var(--text-secondary);">Recorded this month</div>
                 </div>
             `;
-        } else if (role === 'inventory_manager') {
+        } else if (role === 'site_engineer') {
+            dashboardContent.innerHTML = `
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-clipboard-user" style="color:var(--brand-primary); margin-right:8px;"></i> Field Operations</h3>
+                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">Daily Logs</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Site records & engineering notes</div>
+                </div>
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b; margin-right:8px;"></i> Safety & Punch</h3>
+                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">Active</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Inspections and quality control</div>
+                </div>
+                <div class="card" style="padding: 20px; cursor: pointer;" id="dash-site-att">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-business-time" style="color:#10b981; margin-right:8px;"></i> Attendance</h3>
+                    <div style="font-size:24px; font-weight:700; color:#10b981; margin-bottom:4px;">Mark Attendance</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Click to Clock In / View Records</div>
+                </div>
+            `;
+            const elAtt = document.getElementById('dash-site-att');
+            if (elAtt) elAtt.addEventListener('click', () => switchView('team'));
+        } else if (role === 'procurement') {
+            dashboardContent.innerHTML = `
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-truck" style="color:var(--brand-primary); margin-right:8px;"></i> Purchase Orders</h3>
+                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-proc-orders">–</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Orders in procurement</div>
+                </div>
+                <div class="card" style="padding: 20px;">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-boxes-stacked" style="color:#f59e0b; margin-right:8px;"></i> Materials</h3>
+                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-proc-items">–</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Tracked warehouse inventory</div>
+                </div>
+                <div class="card" style="padding: 20px; cursor: pointer;" id="dash-proc-att">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-business-time" style="color:#10b981; margin-right:8px;"></i> Attendance</h3>
+                    <div style="font-size:24px; font-weight:700; color:#10b981; margin-bottom:4px;">Mark Attendance</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Click to Clock In / View Records</div>
+                </div>
+            `;
+            const elProcAtt = document.getElementById('dash-proc-att');
+            if (elProcAtt) elProcAtt.addEventListener('click', () => switchView('team'));
+            api.get('/procurement/purchase-orders').then(pos => {
+                document.getElementById('dash-proc-orders').textContent = pos.length;
+            }).catch(() => {});
+            api.get('/inventory/items').then(items => {
+                document.getElementById('dash-proc-items').textContent = items.length;
+            }).catch(() => {});
+        } else if (role === 'inventory_manager' || role === 'inventory') {
             dashboardContent.innerHTML = `
                 <div class="card" style="padding: 20px;">
                     <h3 style="margin-bottom:10px;"><i class="fa-solid fa-boxes-stacked" style="color:var(--brand-primary); margin-right:8px;"></i> Total Items</h3>
@@ -259,13 +314,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size:32px; font-weight:700; color:#ef4444;" id="dash-inv-low">–</div>
                     <div style="font-size:14px; color:var(--text-secondary);">Items below reorder level</div>
                 </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-truck-ramp-box" style="color:#f59e0b; margin-right:8px;"></i> Pending Orders</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-inv-orders">–</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Purchase orders in transit</div>
+                <div class="card" style="padding: 20px; cursor: pointer;" id="dash-inv-att">
+                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-business-time" style="color:#10b981; margin-right:8px;"></i> Attendance</h3>
+                    <div style="font-size:24px; font-weight:700; color:#10b981; margin-bottom:4px;">Mark Attendance</div>
+                    <div style="font-size:14px; color:var(--text-secondary);">Click to Clock In / View Records</div>
                 </div>
             `;
-            // Load real data for inventory dashboard
+            const elInvAtt = document.getElementById('dash-inv-att');
+            if (elInvAtt) elInvAtt.addEventListener('click', () => switchView('team'));
             api.get('/inventory/items').then(items => {
                 document.getElementById('dash-inv-total').textContent = items.length;
             }).catch(() => {});
@@ -274,7 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }).catch(() => {});
             api.get('/procurement/purchase-orders').then(pos => {
                 const pending = pos.filter(p => p.status === 'ordered').length;
-                document.getElementById('dash-inv-orders').textContent = pending;
+                const ordEl = document.getElementById('dash-inv-orders');
+                if (ordEl) ordEl.textContent = pending;
             }).catch(() => {});
         } else {
             // Fallback Dashboard
@@ -296,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (navPunch) navPunch.addEventListener('click', (e) => { e.preventDefault(); switchView('punch'); });
     if (navSafety) navSafety.addEventListener('click', (e) => { e.preventDefault(); switchView('safety'); });
     if (navRfis) navRfis.addEventListener('click', (e) => { e.preventDefault(); switchView('rfis'); });
-    navTeam.addEventListener('click', (e) => { e.preventDefault(); switchView('team'); loadTeam(); });
+    navTeam.addEventListener('click', (e) => { e.preventDefault(); switchView('team'); });
     navDocuments.addEventListener('click', (e) => { e.preventDefault(); switchView('documents'); loadDocuments(); });
     navAnalytics.addEventListener('click', (e) => { e.preventDefault(); switchView('analytics'); renderAnalytics(); });
     navContractors.addEventListener('click', (e) => { e.preventDefault(); switchView('contractors'); loadContractors(); });
@@ -305,13 +362,328 @@ document.addEventListener('DOMContentLoaded', () => {
     navFinance.addEventListener('click', (e) => { e.preventDefault(); switchView('finance'); loadFinanceData(); });
     navInventory.addEventListener('click', (e) => { e.preventDefault(); switchView('inventory'); loadInventoryData(); });
 
-    const placeholderLinks = document.querySelectorAll('.nav-links a:not(.nav-link), .user-profile > div:not([style]), .avatar');
+    const placeholderLinks = document.querySelectorAll('.nav-links a:not(.nav-link), .avatar');
     placeholderLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             showToast('Coming Soon', 'This feature is currently under development.', 'success');
         });
     });
+
+    // ── Notification System ──
+    const notifBell = document.getElementById('notification-bell');
+    const notifBadge = document.getElementById('notification-badge');
+    const notifDropdown = document.getElementById('notification-dropdown');
+    const notifList = document.getElementById('notification-list');
+    const notifMarkAllBtn = document.getElementById('btn-mark-all-notifications');
+    const notifCountBadge = document.getElementById('dropdown-unread-count');
+
+    let currentNotifications = [];
+    let notifInitialized = false;
+
+    function resetNotificationSystem() {
+        currentNotifications = [];
+        if (notifBadge) {
+            notifBadge.style.display = 'none';
+            notifBadge.textContent = '0';
+        }
+        if (notifCountBadge) {
+            notifCountBadge.textContent = '0';
+        }
+        if (notifDropdown) {
+            notifDropdown.classList.add('hidden');
+        }
+        if (notifBell) {
+            notifBell.classList.remove('active');
+        }
+        if (notifList) {
+            notifList.innerHTML = `
+                <div class="notification-empty">
+                    <i class="fa-regular fa-bell-slash"></i>
+                    No notifications
+                </div>
+            `;
+        }
+    }
+
+    function initNotificationSystem() {
+        if (!currentUser) return;
+        
+        if (!notifInitialized) {
+            setupNotificationListeners();
+            notifInitialized = true;
+        }
+
+        loadNotifications();
+    }
+
+    function setupNotificationListeners() {
+        if (!notifBell || !notifDropdown) return;
+
+        // Toggle dropdown when clicking bell icon
+        notifBell.addEventListener('click', (e) => {
+            if (e.target.closest('#notification-dropdown')) return;
+            e.stopPropagation();
+            const willOpen = notifDropdown.classList.contains('hidden');
+            if (willOpen) {
+                notifDropdown.classList.remove('hidden');
+                notifBell.classList.add('active');
+            } else {
+                notifDropdown.classList.add('hidden');
+                notifBell.classList.remove('active');
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notifBell.contains(e.target)) {
+                notifDropdown.classList.add('hidden');
+                notifBell.classList.remove('active');
+            }
+        });
+
+        // Prevent inside dropdown clicks from bubbling
+        notifDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Mark all as read button
+        if (notifMarkAllBtn) {
+            notifMarkAllBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await markAllNotificationsAsRead();
+            });
+        }
+    }
+
+    async function loadNotifications() {
+        if (!currentUser) return;
+
+        try {
+            let data = await api.get('/notifications/user/' + currentUser.id);
+            if (!Array.isArray(data) || data.length === 0) {
+                data = getSampleNotificationsForUser(currentUser);
+            }
+            currentNotifications = data;
+            renderNotificationUI();
+        } catch (err) {
+            console.warn('Failed to load notifications from API, using fallback:', err);
+            currentNotifications = getSampleNotificationsForUser(currentUser);
+            renderNotificationUI();
+        }
+    }
+
+    function getSampleNotificationsForUser(user) {
+        const role = (user?.role || '').toLowerCase();
+        const now = new Date();
+        const tenMinsAgo = new Date(now.getTime() - 10 * 60000).toISOString();
+        const twoHoursAgo = new Date(now.getTime() - 120 * 60000).toISOString();
+        const oneDayAgo = new Date(now.getTime() - 1440 * 60000).toISOString();
+
+        if (role === 'site_engineer') {
+            return [
+                { id: 'sample-1', type: 'log', message: "Daily Field Log for Skyline Tower is ready for engineer review.", isRead: false, createdAt: tenMinsAgo },
+                { id: 'sample-2', type: 'safety', message: "Safety inspection completed for North Wing Zone 3.", isRead: false, createdAt: twoHoursAgo },
+                { id: 'sample-3', type: 'rfi', message: "RFI-004 answered: Rebar spacing verification cleared.", isRead: true, createdAt: oneDayAgo }
+            ];
+        } else if (role === 'finance' || role === 'finance executive') {
+            return [
+                { id: 'sample-1', type: 'invoice', message: "Invoice INV-2026-003 from Apex Electrical ($45,000.00) awaiting approval.", isRead: false, createdAt: tenMinsAgo },
+                { id: 'sample-2', type: 'change_order', message: "Change Order CO-002 ($145,000.00) cost impact summary ready.", isRead: false, createdAt: twoHoursAgo },
+                { id: 'sample-3', type: 'finance', message: "Milestone payment certificate #4 disbursement processed.", isRead: true, createdAt: oneDayAgo }
+            ];
+        } else if (role === 'inventory_manager' || role === 'procurement') {
+            return [
+                { id: 'sample-1', type: 'low_stock', message: "Low Stock Alert: Deformed Rebar 25mm reached 8 Tons (Reorder: 12 Tons).", isRead: false, createdAt: tenMinsAgo },
+                { id: 'sample-2', type: 'inventory', message: "Purchase Order PO-2026-005 materials delivered to Central Logistics Yard.", isRead: false, createdAt: twoHoursAgo },
+                { id: 'sample-3', type: 'inventory', message: "Physical stock audit batch #12 reconciled with zero discrepancies.", isRead: true, createdAt: oneDayAgo }
+            ];
+        } else {
+            // PM / Admin / General
+            return [
+                { id: 'sample-1', type: 'log', message: "Elena Rostova submitted today's Daily Field Log for Skyline Tower & Residences.", isRead: false, createdAt: tenMinsAgo },
+                { id: 'sample-2', type: 'change_order', message: "Change Order CO-002 ($145,000.00) is pending executive review.", isRead: false, createdAt: twoHoursAgo },
+                { id: 'sample-3', type: 'low_stock', message: "Low Stock Alert: SBS Waterproofing Membrane reached 14 Rolls.", isRead: false, createdAt: oneDayAgo }
+            ];
+        }
+    }
+
+    function getNotificationIconInfo(type) {
+        switch (type) {
+            case 'log':
+            case 'daily_log':
+                return { icon: 'fa-solid fa-clipboard-list', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)' };
+            case 'change_order':
+                return { icon: 'fa-solid fa-file-signature', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' };
+            case 'invoice':
+            case 'finance':
+                return { icon: 'fa-solid fa-file-invoice-dollar', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' };
+            case 'low_stock':
+            case 'inventory':
+                return { icon: 'fa-solid fa-boxes-stacked', color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)' };
+            case 'safety':
+            case 'incident':
+                return { icon: 'fa-solid fa-triangle-exclamation', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' };
+            case 'task':
+                return { icon: 'fa-solid fa-list-check', color: '#818cf8', bg: 'rgba(129, 140, 248, 0.15)' };
+            case 'rfi':
+                return { icon: 'fa-solid fa-circle-question', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' };
+            default:
+                return { icon: 'fa-solid fa-bell', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.15)' };
+        }
+    }
+
+    function formatTimeAgo(dateString) {
+        if (!dateString) return 'Just now';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Recently';
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function renderNotificationUI() {
+        if (!notifList) return;
+
+        const unreadCount = currentNotifications.filter(n => !n.isRead).length;
+
+        // Update bell badge
+        if (notifBadge) {
+            if (unreadCount > 0) {
+                notifBadge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                notifBadge.style.display = 'inline-flex';
+            } else {
+                notifBadge.textContent = '0';
+                notifBadge.style.display = 'none';
+            }
+        }
+
+        // Update dropdown header count badge
+        if (notifCountBadge) {
+            notifCountBadge.textContent = unreadCount > 0 ? `${unreadCount} unread` : '0';
+        }
+
+        // Render list items
+        if (currentNotifications.length === 0) {
+            notifList.innerHTML = `
+                <div class="notification-empty">
+                    <i class="fa-regular fa-bell-slash"></i>
+                    No notifications
+                </div>
+            `;
+            return;
+        }
+
+        notifList.innerHTML = currentNotifications.map(n => {
+            const iconInfo = getNotificationIconInfo(n.type);
+            const isUnread = !n.isRead;
+            return `
+                <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${n.id}">
+                    <div class="notification-icon-wrap" style="color: ${iconInfo.color}; background: ${iconInfo.bg};">
+                        <i class="${iconInfo.icon}"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-msg">${escapeHtml(n.message)}</div>
+                        <span class="notification-time">${formatTimeAgo(n.createdAt)}</span>
+                    </div>
+                    ${isUnread ? '<div class="notification-unread-dot"></div>' : ''}
+                </div>
+            `;
+        }).join('');
+
+        // Attach item click handlers
+        notifList.querySelectorAll('.notification-item').forEach(itemEl => {
+            itemEl.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = itemEl.getAttribute('data-id');
+                const notif = currentNotifications.find(n => String(n.id) === String(id));
+                if (!notif) return;
+
+                if (!notif.isRead) {
+                    await markNotificationAsRead(notif);
+                }
+
+                handleNotificationNavigation(notif.type);
+            });
+        });
+    }
+
+    async function markNotificationAsRead(notif) {
+        notif.isRead = true;
+        renderNotificationUI();
+
+        if (notif.id && !String(notif.id).startsWith('sample-')) {
+            try {
+                await api.put(`/notifications/${notif.id}/read`);
+            } catch (err) {
+                console.warn('Failed to mark notification as read on server:', err);
+            }
+        }
+    }
+
+    async function markAllNotificationsAsRead() {
+        const hasUnread = currentNotifications.some(n => !n.isRead);
+        if (!hasUnread) return;
+
+        currentNotifications.forEach(n => { n.isRead = true; });
+        renderNotificationUI();
+
+        if (currentUser && currentUser.id) {
+            try {
+                await api.post(`/notifications/user/${currentUser.id}/read-all`);
+            } catch (err) {
+                console.warn('Failed to mark all notifications read on server:', err);
+            }
+        }
+        showToast('Notifications', 'All notifications marked as read', 'success');
+    }
+
+    function handleNotificationNavigation(type) {
+        if (!type) return;
+        const t = type.toLowerCase();
+
+        if (notifDropdown) notifDropdown.classList.add('hidden');
+        if (notifBell) notifBell.classList.remove('active');
+
+        if (t === 'log' || t === 'daily_log') {
+            if (navDailyLogs && navDailyLogs.parentElement && navDailyLogs.parentElement.style.display !== 'none') {
+                switchView('daily-logs');
+            }
+        } else if (t === 'change_order' || t === 'invoice' || t === 'finance') {
+            if (navFinance && navFinance.parentElement && navFinance.parentElement.style.display !== 'none') {
+                switchView('finance');
+                loadFinanceData();
+            }
+        } else if (t === 'low_stock' || t === 'inventory') {
+            if (navInventory && navInventory.parentElement && navInventory.parentElement.style.display !== 'none') {
+                switchView('inventory');
+                loadInventoryData();
+            }
+        } else if (t === 'task') {
+            if (navTasks && navTasks.parentElement && navTasks.parentElement.style.display !== 'none') {
+                switchView('tasks');
+            }
+        } else if (t === 'punch') {
+            if (navPunch && navPunch.parentElement && navPunch.parentElement.style.display !== 'none') {
+                switchView('punch');
+            }
+        } else if (t === 'safety' || t === 'incident') {
+            if (navSafety && navSafety.parentElement && navSafety.parentElement.style.display !== 'none') {
+                switchView('safety');
+            }
+        } else if (t === 'rfi') {
+            if (navRfis && navRfis.parentElement && navRfis.parentElement.style.display !== 'none') {
+                switchView('rfis');
+            }
+        }
+    }
 
     // ── Functions: Routing ──
     function switchView(viewName) {
@@ -352,12 +724,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (viewName === 'team') {
             navTeam.parentElement.classList.add('active');
             viewTeam.classList.remove('hidden');
-            if (currentUser && currentUser.role.toLowerCase() === 'pm') {
+            if (currentUser && currentUser.role.toLowerCase() !== 'admin') {
                 btnDirectoryTab.classList.remove('active');
                 btnAttendanceTab.classList.add('active');
                 teamDirectorySection.classList.add('hidden');
                 teamAttendanceSection.classList.remove('hidden');
                 loadAttendance();
+            } else {
+                loadTeam();
             }
         } else if (viewName === 'documents') {
             navDocuments.parentElement.classList.add('active');
@@ -451,7 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allBudgets.forEach(b => {
                 const tr = document.createElement('tr');
                 const isOver = b.actualAmount > b.budgetedAmount;
-                const statusBadge = isOver ? '<span class="badge badge-warning">Over Budget</span>' : '<span class="badge badge-success">On Track</span>';
+                const statusBadge = isOver ? '<span class="status-badge status-high">Over Budget</span>' : '<span class="status-badge status-approved">On Track</span>';
                 tr.innerHTML = `
                     <td>Project ${b.projectId} - ${b.projectName}</td>
                     <td>${b.costCode}</td>
@@ -483,12 +857,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             invoices.forEach(inv => {
                 const tr = document.createElement('tr');
+                const invStatusLower = (inv.status || '').toLowerCase();
+                const invStatusClass = invStatusLower === 'approved' ? 'status-approved' : (invStatusLower === 'pending' ? 'status-pending' : 'status-active');
                 tr.innerHTML = `
                     <td>${inv.invoiceNumber}</td>
                     <td>Project ${inv.projectId}</td>
                     <td>$${inv.amount ? inv.amount.toFixed(2) : '0.00'}</td>
                     <td>${inv.dueDate ? inv.dueDate.split('T')[0] : ''}</td>
-                    <td><span class="badge ${inv.status === 'Pending' ? 'badge-warning' : 'badge-success'}">${inv.status}</span></td>
+                    <td><span class="status-badge ${invStatusClass}">${inv.status}</span></td>
                     <td data-requires-role="finance,admin">
                         ${inv.status === 'Pending' ? `<button class="btn btn-sm btn-primary" style="margin-right:5px;" onclick="approveInvoice(${inv.id})">Approve</button>` : ''}
                         <button class="btn btn-secondary btn-sm" onclick="editInvoice(${inv.id})"><i class="fa-solid fa-pen"></i></button>
@@ -1660,9 +2036,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!date) return;
         try {
             const records = await api.get('/attendance/date/' + date);
-            attendanceTableBody.innerHTML = records.map(r => "<tr><td>" + (r.user ? r.user.name : 'Unknown') + "</td><td>" + (r.clockIn ? new Date(r.clockIn).toLocaleTimeString() : '-') + "</td><td>" + (r.clockOut ? new Date(r.clockOut).toLocaleTimeString() : '-') + "</td><td><span class='status-badge status-active'>" + r.status + "</span></td><td>" + (!r.clockOut && (r.user && r.user.id === currentUser.id) ? "<button class='btn btn-secondary btn-sm' onclick='clockOut(" + r.id + ")'>Clock Out</button>" : '') + "</td></tr>").join('');
+
+            // Check if current user is clocked in today
+            const todayStr = new Date().toISOString().split('T')[0];
+            const isToday = date === todayStr;
+            const myRecord = records.find(r => r.user && r.user.id === currentUser?.id);
+            if (isToday && myRecord && !myRecord.clockOut) {
+                btnClockIn.disabled = true;
+                btnClockIn.innerHTML = '<i class="fa-solid fa-check"></i> Clocked In (Active)';
+            } else {
+                btnClockIn.disabled = false;
+                btnClockIn.innerHTML = '<i class="fa-solid fa-business-time"></i> Clock In';
+            }
+
+            attendanceTableBody.innerHTML = records.map(r => {
+                const u = r.user || {};
+                const isMe = currentUser && u.id === currentUser.id;
+                const canClockOut = !r.clockOut && (isMe || (currentUser && currentUser.role.toLowerCase() === 'admin'));
+                const roleBadge = u.role ? `<span style="font-size:11px; margin-left:6px; color:var(--text-secondary); text-transform:capitalize;">(${escapeHtml(u.role.replace('_', ' '))})</span>` : '';
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(u.name || 'Unknown')}</strong>${roleBadge}</td>
+                        <td>${r.clockIn ? new Date(r.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                        <td>${r.clockOut ? new Date(r.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                        <td><span class="status-badge ${r.clockOut ? 'status-signed' : 'status-active'}">${escapeHtml(r.status || 'Present')}</span></td>
+                        <td>${canClockOut ? `<button class="btn btn-secondary btn-sm" onclick="clockOut(${r.id})"><i class="fa-solid fa-right-from-bracket"></i> Clock Out</button>` : (r.clockOut ? '<span style="font-size:12px; color:var(--text-secondary);"><i class="fa-solid fa-check"></i> Completed</span>' : '—')}</td>
+                    </tr>
+                `;
+            }).join('');
             if(records.length === 0) {
-                attendanceTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No records found</td></tr>';
+                attendanceTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px; color:var(--text-secondary);">No attendance records found for this date.</td></tr>';
             }
         } catch (error) {
             console.error(error);

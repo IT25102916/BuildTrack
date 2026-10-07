@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConstructIQ - Modern Project Management</title>
+    <title>BuildTrack - Modern Project Management</title>
+    <link rel="icon" type="image/png" href="/images/buildtrack-icon.png">
     <!-- Use Plus Jakarta Sans and Inter fonts for a sleek, modern tech aesthetic -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/style.css?v=3">
+    <link rel="stylesheet" href="/css/style.css?v=11">
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <nav class="sidebar">
             <div class="sidebar-header">
-                <i class="fa-solid fa-helmet-safety logo-icon"></i>
-                <span class="logo-text">ConstructIQ</span>
+                <div id="sidebar-brand" style="display: flex; align-items: center; gap: 12px; transition: all 0.3s ease;">
+                    <img src="/images/buildtrack-icon-darkmode.png" alt="BuildTrack Logo" class="sidebar-logo-img">
+                    <span class="logo-text">BuildTrack</span>
+                </div>
             </div>
             <ul class="nav-links">
                 <li class="active"><a href="#" id="nav-dashboard" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
@@ -26,7 +29,7 @@
                 <li><a href="#" id="nav-punch" class="nav-link"><i class="fa-solid fa-clipboard-check"></i> Punch List</a></li>
                 <li><a href="#" id="nav-safety" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Safety Incidents</a></li>
                 <li><a href="#" id="nav-rfis" class="nav-link"><i class="fa-solid fa-comments"></i> RFIs & Submittals</a></li>
-                <li><a href="#" id="nav-team" class="nav-link"><i class="fa-solid fa-users"></i> Team</a></li>
+                <li><a href="#" id="nav-team" class="nav-link"><i class="fa-solid fa-users"></i> Team & Attendance</a></li>
                 <li><a href="#" id="nav-documents" class="nav-link"><i class="fa-solid fa-file-contract"></i> Documents</a></li>
                 <li><a href="#" id="nav-contractors" class="nav-link"><i class="fa-solid fa-truck"></i> Contractors</a></li>
                 <li class="role-restricted role-finance_executive"><a href="#" id="nav-finance" class="nav-link"><i class="fa-solid fa-money-bill"></i> Finance</a></li>
@@ -45,9 +48,23 @@
                     <input type="text" placeholder="Search projects...">
                 </div>
                 <div class="user-profile">
-                    <div class="notification-bell">
+                    <div class="notification-bell" id="notification-bell" title="Notifications">
                         <i class="fa-regular fa-bell"></i>
-                        <span class="badge">3</span>
+                        <span class="badge" id="notification-badge" style="display:none;">0</span>
+                        
+                        <!-- Notification Dropdown Menu -->
+                        <div class="notification-dropdown hidden" id="notification-dropdown">
+                            <div class="notification-dropdown-header">
+                                <h4><i class="fa-solid fa-bell"></i> Notifications <span class="notification-count-badge" id="dropdown-unread-count">0</span></h4>
+                                <button type="button" class="notification-mark-all" id="btn-mark-all-notifications">Mark all read</button>
+                            </div>
+                            <div class="notification-list" id="notification-list">
+                                <div class="notification-empty">
+                                    <i class="fa-regular fa-bell-slash"></i>
+                                    No notifications
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div style="display:flex; align-items:center; gap: 10px;">
                         <img src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff" alt="User Avatar" class="avatar" id="current-user-avatar">
@@ -118,12 +135,12 @@
                 </div>
                 </div> <!-- End Projects View -->
 
-                <!-- ── Team View ── -->
+                <!-- ── Team & Attendance View ── -->
                 <div id="view-team" class="view-section hidden">
                     <div class="page-header">
                         <div>
-                            <h1 class="page-title">Team Directory</h1>
-                            <p class="page-subtitle">Manage members, roles, and access across projects</p>
+                            <h1 class="page-title">Team & Attendance</h1>
+                            <p class="page-subtitle">Manage team members, view records, and log daily employee attendance</p>
                         </div>
                         <button class="btn btn-primary" id="btn-new-user" data-requires-role="admin">
                             <i class="fa-solid fa-plus"></i> Add Member
@@ -139,22 +156,24 @@
                         </div>
 
                         <div id="team-directory-section">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Role</th>
-                                        <th>Email</th>
-                                        <th>Phone</th>
-                                        <th>Joined</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="team-table-body">
-                                    <!-- Team rows will be inserted here -->
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Role</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Joined</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="team-table-body">
+                                        <!-- Team rows will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
                             <div id="loading-spinner-team" class="loading-spinner hidden">
                                 <i class="fa-solid fa-spinner fa-spin"></i> Loading team...
                             </div>
@@ -171,20 +190,22 @@
                                 <button class="btn btn-primary" id="btn-load-attendance">Load</button>
                                 <button class="btn btn-secondary" id="btn-clock-in">Clock In</button>
                             </div>
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Employee</th>
-                                        <th>Clock In</th>
-                                        <th>Clock Out</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="attendance-table-body">
-                                    <!-- Attendance rows will be inserted here -->
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Clock In</th>
+                                            <th>Clock Out</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendance-table-body">
+                                        <!-- Attendance rows will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div> <!-- End Team View -->
@@ -205,23 +226,25 @@
                                     <i class="fa-solid fa-plus"></i> Upload Document
                                 </button>
                             </div>
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Project ID</th>
-                                        <th>File Name</th>
-                                        <th>Type</th>
-                                        <th>URL</th>
-                                        <th>Uploaded By</th>
-                                        <th>Created At</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="documents-table-body">
-                                    <!-- Populated by JS -->
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Project ID</th>
+                                            <th>File Name</th>
+                                            <th>Type</th>
+                                            <th>URL</th>
+                                            <th>Uploaded By</th>
+                                            <th>Created At</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="documents-table-body">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
                             <div id="loading-spinner-documents" class="loading-spinner hidden">
                                 <i class="fa-solid fa-circle-notch fa-spin"></i> Loading...
                             </div>
@@ -253,22 +276,24 @@
                                 <i class="fa-solid fa-plus"></i> Add Subcontractor
                             </button>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Contact</th>
-                                    <th>Phone</th>
-                                    <th>License</th>
-                                    <th>Status</th>
-                                    <th data-requires-role="procurement,admin">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subcontractors-table-body">
-                                <!-- Data will be loaded here -->
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Contact</th>
+                                        <th>Phone</th>
+                                        <th>License</th>
+                                        <th>Status</th>
+                                        <th data-requires-role="procurement,admin">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subcontractors-table-body">
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- Suppliers Tab -->
@@ -279,22 +304,24 @@
                                 <i class="fa-solid fa-plus"></i> Add Supplier
                             </button>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Contact</th>
-                                    <th>Phone</th>
-                                    <th>Type</th>
-                                    <th>Rating</th>
-                                    <th data-requires-role="procurement,admin">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="suppliers-table-body">
-                                <!-- Data will be loaded here -->
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Contact</th>
+                                        <th>Phone</th>
+                                        <th>Type</th>
+                                        <th>Rating</th>
+                                        <th data-requires-role="procurement,admin">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="suppliers-table-body">
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div> <!-- End Contractors View -->
 
@@ -374,22 +401,24 @@
                                 <i class="fa-solid fa-plus"></i> Add Budget Line
                             </button>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project ID</th>
-                                    <th>Cost Code</th>
-                                    <th>Description</th>
-                                    <th>Budgeted</th>
-                                    <th>Actual</th>
-                                    <th>Status</th>
-                                    <th data-requires-role="finance,admin">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="finance-budgets-body">
-                                <!-- populated by js -->
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Project ID</th>
+                                        <th>Cost Code</th>
+                                        <th>Description</th>
+                                        <th>Budgeted</th>
+                                        <th>Actual</th>
+                                        <th>Status</th>
+                                        <th data-requires-role="finance,admin">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finance-budgets-body">
+                                    <!-- populated by js -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- Invoices -->
@@ -400,21 +429,23 @@
                                 <i class="fa-solid fa-plus"></i> Add Invoice
                             </button>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Invoice #</th>
-                                    <th>Project ID</th>
-                                    <th>Amount</th>
-                                    <th>Due Date</th>
-                                    <th>Status</th>
-                                    <th data-requires-role="finance,admin">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="finance-invoices-body">
-                                <!-- populated by js -->
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Invoice #</th>
+                                        <th>Project ID</th>
+                                        <th>Amount</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th data-requires-role="finance,admin">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finance-invoices-body">
+                                    <!-- populated by js -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- Transactions -->
@@ -425,22 +456,24 @@
                                 <i class="fa-solid fa-plus"></i> Add Transaction
                             </button>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Date</th>
-                                    <th>Project</th>
-                                    <th>Category</th>
-                                    <th>Amount</th>
-                                    <th>Description</th>
-                                    <th data-requires-role="finance,admin">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="finance-transactions-body">
-                                <!-- populated by js -->
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Date</th>
+                                        <th>Project</th>
+                                        <th>Category</th>
+                                        <th>Amount</th>
+                                        <th>Description</th>
+                                        <th data-requires-role="finance,admin">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finance-transactions-body">
+                                    <!-- populated by js -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- Payroll -->
@@ -451,21 +484,23 @@
                                 <i class="fa-solid fa-plus"></i> Add Payroll
                             </button>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Transaction ID</th>
-                                    <th>Date</th>
-                                    <th>Project ID</th>
-                                    <th>Amount</th>
-                                    <th>Description</th>
-                                    <th data-requires-role="finance,admin">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="finance-payroll-body">
-                                <!-- populated by js -->
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Transaction ID</th>
+                                        <th>Date</th>
+                                        <th>Project ID</th>
+                                        <th>Amount</th>
+                                        <th>Description</th>
+                                        <th data-requires-role="finance,admin">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="finance-payroll-body">
+                                    <!-- populated by js -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -495,23 +530,25 @@
                             <h3>Current Stock Levels</h3>
                             <span id="inv-low-stock-badge" class="hidden" style="background:#ef4444; color:#fff; padding:4px 12px; border-radius:20px; font-size:13px; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock Items: <span id="inv-low-stock-count">0</span></span>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Item Name</th>
-                                    <th>Category</th>
-                                    <th>Unit</th>
-                                    <th>Qty on Hand</th>
-                                    <th>Reorder Level</th>
-                                    <th>Unit Cost</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inv-stock-body">
-                                <tr><td colspan="8" style="text-align:center; color:var(--text-secondary);">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Category</th>
+                                        <th>Unit</th>
+                                        <th>Qty on Hand</th>
+                                        <th>Reorder Level</th>
+                                        <th>Unit Cost</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inv-stock-body">
+                                    <tr><td colspan="8" style="text-align:center; color:var(--text-secondary);">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- Receive Materials Tab -->
@@ -574,41 +611,45 @@
                             <h3>Purchase Orders</h3>
                             <button class="btn btn-primary" id="btn-new-po"><i class="fa-solid fa-plus"></i> New PO</button>
                         </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Supplier</th>
-                                    <th>Amount</th>
-                                    <th>Order Date</th>
-                                    <th>Expected Delivery</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inv-orders-body">
-                                <tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Supplier</th>
+                                        <th>Amount</th>
+                                        <th>Order Date</th>
+                                        <th>Expected Delivery</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inv-orders-body">
+                                    <tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- Movement Ledger Tab -->
                     <div id="inv-ledger-view" class="card hidden">
                         <h3 style="margin-bottom:15px;">Movement Ledger</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Item</th>
-                                    <th>Type</th>
-                                    <th>Quantity</th>
-                                    <th>Notes</th>
-                                    <th>By</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inv-ledger-body">
-                                <tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Item</th>
+                                        <th>Type</th>
+                                        <th>Quantity</th>
+                                        <th>Notes</th>
+                                        <th>By</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inv-ledger-body">
+                                    <tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- Add Item Modal -->
@@ -1906,13 +1947,13 @@
     </div>
 
     <!-- Login Modal -->
-    <div id="login-modal" class="modal-overlay" style="background: rgba(0,0,0,0.8); z-index: 10000;">
+    <div id="login-modal" class="modal-overlay login-screen-backdrop">
         <div class="modal-content" style="max-width: 400px; margin-top: 15vh;">
-            <div class="modal-header" style="justify-content: center; border-bottom: none;">
-                <h2 style="text-align: center; margin-bottom: 10px;">
-                    <i class="fa-solid fa-helmet-safety" style="color: var(--brand-primary); margin-right: 10px;"></i>
-                    ConstructIQ
-                </h2>
+            <div class="modal-header" style="justify-content: center; border-bottom: none; display: flex; align-items: center; padding-top: 24px; padding-bottom: 8px;">
+                <div id="login-brand" style="display: flex; align-items: center; gap: 12px;">
+                    <img src="/images/buildtrack-icon-darkmode.png" alt="BuildTrack Logo" style="height: 40px; width: auto; object-fit: contain; filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));">
+                    <span class="logo-text" style="font-size: 26px;">BuildTrack</span>
+                </div>
             </div>
             <form id="login-form" style="padding: 0 20px 20px 20px;">
                 <p style="text-align: center; margin-bottom: 20px; color: var(--text-secondary);">Sign in to your account</p>
@@ -1965,6 +2006,6 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/api.js"></script>
-    <script src="/js/app.js?v=7"></script>
+    <script src="/js/app.js?v=12"></script>
 </body>
 </html>
