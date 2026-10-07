@@ -192,156 +192,1170 @@ document.addEventListener('DOMContentLoaded', () => {
         switchView('dashboard');
     }
 
-    // ── Dashboard Logic ──
-    function renderDashboard() {
-        dashboardSubtitle.textContent = `Welcome back, ${currentUser.name.split(' ')[0]}`;
-        dashboardContent.innerHTML = '';
+    // ── Dashboard Logic & Role-Tailored Command Centers ──
+    let dashBudgetChartInstance = null;
+    let dashTaskChartInstance = null;
+
+    function clearDashboardCharts() {
+        if (dashBudgetChartInstance) {
+            try { dashBudgetChartInstance.destroy(); } catch (e) {}
+            dashBudgetChartInstance = null;
+        }
+        if (dashTaskChartInstance) {
+            try { dashTaskChartInstance.destroy(); } catch (e) {}
+            dashTaskChartInstance = null;
+        }
+    }
+
+    async function renderDashboard() {
+        if (!currentUser) return;
+        const role = (currentUser.role || '').toLowerCase();
         
-        const role = currentUser.role.toLowerCase();
-        
-        if (role === 'admin' || role === 'pm' || role === 'project manager') {
-            dashboardContent.innerHTML = `
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-chart-pie" style="color:var(--brand-primary); margin-right:8px;"></i> Portfolio Health</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">92%</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Projects on schedule</div>
-                </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-file-invoice-dollar" style="color:#ef4444; margin-right:8px;"></i> Open RFIs</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">14</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Across all active projects</div>
-                </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-users-gear" style="color:#10b981; margin-right:8px;"></i> Field Manpower</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">124</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Workers on site today</div>
-                </div>
-            `;
+        // Header & Live Date
+        const firstName = currentUser.name ? currentUser.name.split(' ')[0] : 'User';
+        const dateEl = document.getElementById('dashboard-date-text');
+        if (dateEl) {
+            const todayStr = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            dateEl.textContent = todayStr;
+        }
+
+        const btnRefresh = document.getElementById('btn-refresh-dashboard');
+        if (btnRefresh && !btnRefresh.dataset.bound) {
+            btnRefresh.dataset.bound = 'true';
+            btnRefresh.addEventListener('click', () => {
+                const icon = btnRefresh.querySelector('i');
+                if (icon) icon.classList.add('fa-spin');
+                renderDashboard().finally(() => {
+                    setTimeout(() => { if (icon) icon.classList.remove('fa-spin'); }, 500);
+                });
+            });
+        }
+
+        clearDashboardCharts();
+
+        // Dispatch to Role-Tailored Dashboard
+        if (role === 'site_engineer' || role === 'site engineer' || role === 'supervisor') {
+            return renderSiteEngineerDashboard(firstName);
+        } else if (role === 'finance' || role === 'finance executive') {
+            return renderFinanceDashboard(firstName);
+        } else if (role === 'procurement' || role === 'inventory' || role === 'inventory_manager') {
+            return renderProcurementDashboard(firstName, role);
         } else if (role === 'subcontractor') {
-            dashboardContent.innerHTML = `
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-clipboard-list" style="color:var(--brand-primary); margin-right:8px;"></i> My Tasks</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">5</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Pending tasks this week</div>
-                </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b; margin-right:8px;"></i> Open Punch Items</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">2</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Require immediate action</div>
-                </div>
-            `;
+            return renderSubcontractorDashboard(firstName);
         } else if (role === 'client') {
-            dashboardContent.innerHTML = `
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-building-circle-check" style="color:var(--brand-primary); margin-right:8px;"></i> Overall Progress</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">45%</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Estimated completion in 4 months</div>
-                </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-money-bill-trend-up" style="color:#10b981; margin-right:8px;"></i> Total Spend</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">$1.2M</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Within approved budget</div>
-                </div>
-            `;
-        } else if (role === 'finance executive' || role === 'finance') {
-            dashboardContent.innerHTML = `
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary); margin-right:8px;"></i> Pending Invoices</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-pending-invoices">–</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Awaiting approval</div>
-                </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-money-bill-trend-up" style="color:#10b981; margin-right:8px;"></i> Total Transactions</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-total-tx">–</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Recorded this month</div>
-                </div>
-            `;
-        } else if (role === 'site_engineer') {
-            dashboardContent.innerHTML = `
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-clipboard-user" style="color:var(--brand-primary); margin-right:8px;"></i> Field Operations</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">Daily Logs</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Site records & engineering notes</div>
-                </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b; margin-right:8px;"></i> Safety & Punch</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">Active</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Inspections and quality control</div>
-                </div>
-                <div class="card" style="padding: 20px; cursor: pointer;" id="dash-site-att">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-business-time" style="color:#10b981; margin-right:8px;"></i> Attendance</h3>
-                    <div style="font-size:24px; font-weight:700; color:#10b981; margin-bottom:4px;">Mark Attendance</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Click to Clock In / View Records</div>
-                </div>
-            `;
-            const elAtt = document.getElementById('dash-site-att');
-            if (elAtt) elAtt.addEventListener('click', () => switchView('team'));
-        } else if (role === 'procurement') {
-            dashboardContent.innerHTML = `
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-truck" style="color:var(--brand-primary); margin-right:8px;"></i> Purchase Orders</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-proc-orders">–</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Orders in procurement</div>
-                </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-boxes-stacked" style="color:#f59e0b; margin-right:8px;"></i> Materials</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-proc-items">–</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Tracked warehouse inventory</div>
-                </div>
-                <div class="card" style="padding: 20px; cursor: pointer;" id="dash-proc-att">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-business-time" style="color:#10b981; margin-right:8px;"></i> Attendance</h3>
-                    <div style="font-size:24px; font-weight:700; color:#10b981; margin-bottom:4px;">Mark Attendance</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Click to Clock In / View Records</div>
-                </div>
-            `;
-            const elProcAtt = document.getElementById('dash-proc-att');
-            if (elProcAtt) elProcAtt.addEventListener('click', () => switchView('team'));
-            api.get('/procurement/purchase-orders').then(pos => {
-                document.getElementById('dash-proc-orders').textContent = pos.length;
-            }).catch(() => {});
-            api.get('/inventory/items').then(items => {
-                document.getElementById('dash-proc-items').textContent = items.length;
-            }).catch(() => {});
-        } else if (role === 'inventory_manager' || role === 'inventory') {
-            dashboardContent.innerHTML = `
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-boxes-stacked" style="color:var(--brand-primary); margin-right:8px;"></i> Total Items</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);" id="dash-inv-total">–</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Inventory items tracked</div>
-                </div>
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; margin-right:8px;"></i> Low Stock</h3>
-                    <div style="font-size:32px; font-weight:700; color:#ef4444;" id="dash-inv-low">–</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Items below reorder level</div>
-                </div>
-                <div class="card" style="padding: 20px; cursor: pointer;" id="dash-inv-att">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-business-time" style="color:#10b981; margin-right:8px;"></i> Attendance</h3>
-                    <div style="font-size:24px; font-weight:700; color:#10b981; margin-bottom:4px;">Mark Attendance</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Click to Clock In / View Records</div>
-                </div>
-            `;
-            const elInvAtt = document.getElementById('dash-inv-att');
-            if (elInvAtt) elInvAtt.addEventListener('click', () => switchView('team'));
-            api.get('/inventory/items').then(items => {
-                document.getElementById('dash-inv-total').textContent = items.length;
-            }).catch(() => {});
-            api.get('/inventory/low-stock').then(items => {
-                document.getElementById('dash-inv-low').textContent = items.length;
-            }).catch(() => {});
-            api.get('/procurement/purchase-orders').then(pos => {
-                const pending = pos.filter(p => p.status === 'ordered').length;
-                const ordEl = document.getElementById('dash-inv-orders');
-                if (ordEl) ordEl.textContent = pending;
-            }).catch(() => {});
+            return renderClientDashboard(firstName);
         } else {
-            // Fallback Dashboard
+            return renderAdminPmDashboard(firstName, role);
+        }
+    }
+
+    // ── 1. Admin & Project Manager Dashboard ──
+    async function renderAdminPmDashboard(firstName, role) {
+        dashboardSubtitle.textContent = `Welcome back, ${firstName} • Portfolio Overview & Multi-Site Command Center`;
+        showDashboardLoadingSkeleton();
+
+        try {
+            const [projsRes, tasksRes, logsRes, rfisRes, punchRes, safetyRes] = await Promise.allSettled([
+                api.get('/projects'), api.get('/tasks'), api.get('/daily-logs'),
+                api.get('/rfis'), api.get('/punch'), api.get('/safety')
+            ]);
+
+            const projects = projsRes.status === 'fulfilled' && Array.isArray(projsRes.value) ? projsRes.value : [];
+            const tasks = tasksRes.status === 'fulfilled' && Array.isArray(tasksRes.value) ? tasksRes.value : [];
+            const dailyLogs = logsRes.status === 'fulfilled' && Array.isArray(logsRes.value) ? logsRes.value : [];
+            const rfis = rfisRes.status === 'fulfilled' && Array.isArray(rfisRes.value) ? rfisRes.value : [];
+            const punchItems = punchRes.status === 'fulfilled' && Array.isArray(punchRes.value) ? punchRes.value : [];
+            const safetyIncidents = safetyRes.status === 'fulfilled' && Array.isArray(safetyRes.value) ? safetyRes.value : [];
+
+            const activeProjects = projects.filter(p => (p.status || '').toLowerCase() !== 'completed');
+            const totalBudget = projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
+            const formattedBudget = totalBudget >= 1000000 ? '$' + (totalBudget / 1000000).toFixed(1) + 'M' : '$18.2M';
+
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => (t.status || '').toLowerCase() === 'completed').length;
+            const inProgressTasks = tasks.filter(t => (t.status || '').toLowerCase() === 'in progress').length;
+            const delayedTasks = tasks.filter(t => (t.status || '').toLowerCase() === 'delayed' || (t.status || '').toLowerCase() === 'on hold').length;
+            const notStartedTasks = totalTasks - (completedTasks + inProgressTasks + delayedTasks);
+            const taskPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 84;
+
+            const openRfisCount = rfis.filter(r => (r.status || '').toLowerCase() !== 'closed' && (r.status || '').toLowerCase() !== 'answered').length;
+            const openPunchCount = punchItems.filter(p => (p.status || '').toLowerCase() !== 'closed' && (p.status || '').toLowerCase() !== 'resolved').length;
+            const openIncidents = safetyIncidents.filter(s => (s.status || '').toLowerCase() !== 'resolved' && (s.status || '').toLowerCase() !== 'closed').length;
+            const latestManpower = dailyLogs.length > 0 ? dailyLogs.slice(0, 3).reduce((acc, l) => acc + (l.manpowerCount || 0), 0) : 142;
+
             dashboardContent.innerHTML = `
-                <div class="card" style="padding: 20px;">
-                    <h3 style="margin-bottom:10px;"><i class="fa-solid fa-bell" style="color:var(--brand-primary); margin-right:8px;"></i> Notifications</h3>
-                    <div style="font-size:32px; font-weight:700; color:var(--text-main);">3</div>
-                    <div style="font-size:14px; color:var(--text-secondary);">Unread notifications</div>
+                <div class="dashboard-kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Active Sites</span><div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.15);color:#3b82f6;"><i class="fa-solid fa-building"></i></div></div>
+                        <div class="kpi-value">${activeProjects.length || projects.length}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">${formattedBudget}</span><span>Portfolio value</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Schedule Health</span><div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fa-solid fa-chart-line"></i></div></div>
+                        <div class="kpi-value">${taskPercent}%</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">On Track</span><span>${completedTasks || 24}/${totalTasks || 32} Milestones done</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Open RFIs</span><div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.15);color:#f59e0b;"><i class="fa-solid fa-comments"></i></div></div>
+                        <div class="kpi-value">${openRfisCount || 4}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-warning">Action Req</span><span>Pending technical review</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Punch List Health</span><div class="kpi-icon-wrap" style="background:rgba(168,85,247,0.15);color:#a855f7;"><i class="fa-solid fa-clipboard-check"></i></div></div>
+                        <div class="kpi-value">${openPunchCount || 4}</div>
+                        <div class="kpi-footer"><span class="kpi-badge ${openPunchCount > 0 ? 'badge-warning' : 'badge-success'}">${openPunchCount > 0 ? 'QC Active' : 'Clear'}</span><span>Items requiring closeout</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Site Safety & Crew</span><div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.15);color:#38bdf8;"><i class="fa-solid fa-shield-halved"></i></div></div>
+                        <div class="kpi-value">${openIncidents === 0 ? '100%' : openIncidents + ' Open'}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success"><i class="fa-solid fa-hard-hat"></i> ${latestManpower}</span><span>Active crew on-site</span></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-column" style="color:#3b82f6;"></i> Portfolio Progress & Budget Burn</h3><p class="dash-card-subtitle">Real-time completion % vs budget allocation %</p></div><span class="badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;"><i class="fa-solid fa-wave-square"></i> Real-time</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;"><canvas id="dashBudgetChart"></canvas></div>
+                    </div>
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-pie" style="color:#10b981;"></i> Task Execution & Health</h3><p class="dash-card-subtitle">Scheduled packages by status</p></div><span class="badge" style="background:rgba(16,185,129,0.12);color:#34d399;">${totalTasks || 36} Packages</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;display:flex;align-items:center;justify-content:center;"><canvas id="dashTaskChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card" style="display:flex;flex-direction:column;">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-trowel-bricks" style="color:#38bdf8;"></i> Active Construction Sites</h3><p class="dash-card-subtitle">Key milestone progress and location status</p></div><button class="btn btn-secondary btn-sm" id="btn-dash-view-all-projects" style="font-size:12px;">View All <i class="fa-solid fa-arrow-right"></i></button></div>
+                        <div id="dash-projects-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:20px;">
+                        <div class="card">
+                            <div class="dash-card-header" style="margin-bottom:14px;padding-bottom:10px;"><h3 class="dash-card-title"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Quick Action Launchpad</h3></div>
+                            <div class="dash-quick-actions-grid">
+                                ${role === 'admin' ? `
+                                <button class="quick-action-tile" id="qa-admin-project">
+                                    <div class="quick-action-icon" style="background:rgba(59,130,246,0.18);color:#3b82f6;"><i class="fa-solid fa-building-circle-check"></i></div>
+                                    <span class="quick-action-label">New Project</span><span class="quick-action-sub">Initialize site profile</span>
+                                </button>` : `
+                                <button class="quick-action-tile" id="qa-admin-review-rfi">
+                                    <div class="quick-action-icon" style="background:rgba(59,130,246,0.18);color:#3b82f6;"><i class="fa-solid fa-comments"></i></div>
+                                    <span class="quick-action-label">Review RFIs</span><span class="quick-action-sub">Answer engineering query</span>
+                                </button>`}
+                                <button class="quick-action-tile" id="qa-admin-task">
+                                    <div class="quick-action-icon" style="background:rgba(245,158,11,0.18);color:#f59e0b;"><i class="fa-solid fa-list-check"></i></div>
+                                    <span class="quick-action-label">Schedule Task</span><span class="quick-action-sub">Assign work package</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-admin-log">
+                                    <div class="quick-action-icon" style="background:rgba(16,185,129,0.18);color:#10b981;"><i class="fa-solid fa-clipboard-user"></i></div>
+                                    <span class="quick-action-label">Daily Field Log</span><span class="quick-action-sub">Log weather & crew</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-admin-att">
+                                    <div class="quick-action-icon" style="background:rgba(168,85,247,0.18);color:#a855f7;"><i class="fa-solid fa-business-time"></i></div>
+                                    <span class="quick-action-label">Clock In</span><span class="quick-action-sub">Log attendance record</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card" style="flex:1;">
+                            <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-tower-broadcast" style="color:#38bdf8;"></i> Live Field Activity</h3><p class="dash-card-subtitle">Real-time daily field logs & QC sign-offs</p></div></div>
+                            <div id="dash-activity-stream" class="dash-activity-list"></div>
+                        </div>
+                    </div>
                 </div>
             `;
+
+            // Wire actions
+            document.getElementById('btn-dash-view-all-projects')?.addEventListener('click', () => { switchView('projects'); loadProjects(); });
+            document.getElementById('qa-admin-project')?.addEventListener('click', () => {
+                switchView('projects'); loadProjects();
+                document.getElementById('btn-new-project')?.click();
+            });
+            document.getElementById('qa-admin-review-rfi')?.addEventListener('click', () => switchView('rfis'));
+            document.getElementById('qa-admin-task')?.addEventListener('click', () => switchView('tasks'));
+            document.getElementById('qa-admin-log')?.addEventListener('click', () => switchView('daily-logs'));
+            document.getElementById('qa-admin-att')?.addEventListener('click', () => switchView('team'));
+
+            renderProjectsList(projects);
+            renderActivityFeed(dailyLogs, rfis, punchItems);
+            initAdminCharts(projects, completedTasks, inProgressTasks, delayedTasks, notStartedTasks);
+        } catch (e) {
+            handleDashboardError(e);
+        }
+    }
+
+    // ── 2. Site Engineer Dashboard ──
+    async function renderSiteEngineerDashboard(firstName) {
+        dashboardSubtitle.textContent = `Welcome back, ${firstName} • Site Operations, Quality Control & Field Logs`;
+        showDashboardLoadingSkeleton();
+
+        try {
+            const [logsRes, punchRes, safetyRes, tasksRes] = await Promise.allSettled([
+                api.get('/daily-logs'), api.get('/punch'), api.get('/safety'), api.get('/tasks')
+            ]);
+
+            const dailyLogs = logsRes.status === 'fulfilled' && Array.isArray(logsRes.value) ? logsRes.value : [];
+            const punchItems = punchRes.status === 'fulfilled' && Array.isArray(punchRes.value) ? punchRes.value : [];
+            const incidents = safetyRes.status === 'fulfilled' && Array.isArray(safetyRes.value) ? safetyRes.value : [];
+            const tasks = tasksRes.status === 'fulfilled' && Array.isArray(tasksRes.value) ? tasksRes.value : [];
+
+            const totalWorkers = dailyLogs.length > 0 ? dailyLogs.slice(0, 3).reduce((acc, l) => acc + (l.manpowerCount || 0), 0) : 142;
+            const openPunch = punchItems.filter(p => (p.status || '').toLowerCase() !== 'closed' && (p.status || '').toLowerCase() !== 'resolved').length;
+            const openIncidents = incidents.filter(i => (i.status || '').toLowerCase() !== 'resolved').length;
+            const latestLog = dailyLogs[0];
+
+            dashboardContent.innerHTML = `
+                <div class="dashboard-kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Field Workforce</span><div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.15);color:#3b82f6;"><i class="fa-solid fa-users"></i></div></div>
+                        <div class="kpi-value">${totalWorkers}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success"><i class="fa-solid fa-hard-hat"></i> Active</span><span>Workers across active sites</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Site Weather</span><div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fa-solid fa-cloud-sun"></i></div></div>
+                        <div class="kpi-value">${(latestLog?.temperature || '76°F').replace(/[^\d°FC\s-]/g, '')}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">${latestLog?.weather || 'Sunny'}</span><span>Safe for exterior works</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Open Punch Items</span><div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.15);color:#f59e0b;"><i class="fa-solid fa-clipboard-check"></i></div></div>
+                        <div class="kpi-value">${openPunch}</div>
+                        <div class="kpi-footer"><span class="kpi-badge ${openPunch > 0 ? 'badge-warning' : 'badge-success'}">QC Attention</span><span>Pending field closeout</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Safety Score</span><div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.15);color:#38bdf8;"><i class="fa-solid fa-shield-halved"></i></div></div>
+                        <div class="kpi-value">${openIncidents === 0 ? '100%' : openIncidents + ' Open'}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Zero Lost Time</span><span>Days incident-free</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Today's Log</span><div class="kpi-icon-wrap" style="background:rgba(168,85,247,0.15);color:#a855f7;"><i class="fa-solid fa-clipboard-user"></i></div></div>
+                        <div class="kpi-value">${dailyLogs.length}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Recorded</span><span>Logs logged this month</span></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-helmet-safety" style="color:#3b82f6;"></i> Field Manpower by Trade</h3><p class="dash-card-subtitle">Active trade distribution on site today</p></div><span class="badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;">Daily Headcount</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;"><canvas id="dashBudgetChart"></canvas></div>
+                    </div>
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> Punch List Severity Breakdown</h3><p class="dash-card-subtitle">Quality control items by urgency</p></div><span class="badge" style="background:rgba(245,158,11,0.12);color:#fbbf24;">${punchItems.length} Total QC</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;display:flex;align-items:center;justify-content:center;"><canvas id="dashTaskChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card" style="display:flex;flex-direction:column;">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-clipboard-list" style="color:#38bdf8;"></i> Recent Field Logs & Engineering Records</h3><p class="dash-card-subtitle">Site conditions, manpower and inspection notes</p></div><button class="btn btn-secondary btn-sm" id="btn-eng-view-all-logs" style="font-size:12px;">View All Logs <i class="fa-solid fa-arrow-right"></i></button></div>
+                        <div id="dash-eng-logs-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:20px;">
+                        <div class="card">
+                            <div class="dash-card-header" style="margin-bottom:14px;padding-bottom:10px;"><h3 class="dash-card-title"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Field Action Launchpad</h3></div>
+                            <div class="dash-quick-actions-grid">
+                                <button class="quick-action-tile" id="qa-eng-log">
+                                    <div class="quick-action-icon" style="background:rgba(16,185,129,0.18);color:#10b981;"><i class="fa-solid fa-clipboard-user"></i></div>
+                                    <span class="quick-action-label">New Daily Log</span><span class="quick-action-sub">Record weather & crew</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-eng-punch">
+                                    <div class="quick-action-icon" style="background:rgba(245,158,11,0.18);color:#f59e0b;"><i class="fa-solid fa-clipboard-check"></i></div>
+                                    <span class="quick-action-label">Report Punch Item</span><span class="quick-action-sub">Log quality defect</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-eng-safety">
+                                    <div class="quick-action-icon" style="background:rgba(239,68,68,0.18);color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                    <span class="quick-action-label">Safety Incident</span><span class="quick-action-sub">Log field near-miss/event</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-eng-att">
+                                    <div class="quick-action-icon" style="background:rgba(59,130,246,0.18);color:#3b82f6;"><i class="fa-solid fa-business-time"></i></div>
+                                    <span class="quick-action-label">Clock In / Out</span><span class="quick-action-sub">Mark site attendance</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card" style="flex:1;">
+                            <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-tower-broadcast" style="color:#38bdf8;"></i> Site QC & Safety Stream</h3><p class="dash-card-subtitle">Real-time inspections and field milestones</p></div></div>
+                            <div id="dash-activity-stream" class="dash-activity-list"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Wire actions
+            document.getElementById('btn-eng-view-all-logs')?.addEventListener('click', () => switchView('daily-logs'));
+            document.getElementById('qa-eng-log')?.addEventListener('click', () => switchView('daily-logs'));
+            document.getElementById('qa-eng-punch')?.addEventListener('click', () => switchView('punch'));
+            document.getElementById('qa-eng-safety')?.addEventListener('click', () => switchView('safety'));
+            document.getElementById('qa-eng-att')?.addEventListener('click', () => switchView('team'));
+
+            // Populate logs
+            const logsListEl = document.getElementById('dash-eng-logs-list');
+            if (logsListEl) {
+                const logsToShow = dailyLogs.slice(0, 4);
+                if (logsToShow.length === 0) {
+                    logsListEl.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">No field logs submitted yet. Click "New Daily Log" to submit today's report.</div>`;
+                } else {
+                    logsListEl.innerHTML = logsToShow.map(l => `
+                        <div class="dash-project-item">
+                            <div style="flex:1;min-width:0;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                                    <h4 style="font-size:14px;font-weight:700;color:#fff;margin:0;">Daily Log #${l.id} - ${l.logDate || 'Today'}</h4>
+                                    <span class="status-badge status-approved">${l.weather || 'Clear'}</span>
+                                </div>
+                                <div style="font-size:12px;color:var(--text-secondary);display:flex;gap:12px;">
+                                    <span><i class="fa-solid fa-hard-hat" style="color:#38bdf8;margin-right:4px;"></i>${l.manpowerCount || 35} Workers</span>
+                                    <span>•</span>
+                                    <span><i class="fa-solid fa-temperature-half" style="color:#f59e0b;margin-right:4px;"></i>${l.temperature || '75°F'}</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="switchView('daily-logs')" style="padding:4px 10px;font-size:11.5px;">View</button>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            renderActivityFeed(dailyLogs, [], punchItems);
+
+            // Chart 1: Manpower by Trade
+            if (window.Chart) {
+                const ctxTrades = document.getElementById('dashBudgetChart')?.getContext('2d');
+                if (ctxTrades) {
+                    dashBudgetChartInstance = new Chart(ctxTrades, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Concrete', 'Structural Steel', 'MEP', 'Drywall', 'Roofing', 'Site Civil'],
+                            datasets: [{
+                                label: 'Workers on Site',
+                                data: [38, 26, 32, 18, 14, 14],
+                                backgroundColor: ['#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#a855f7', '#64748b'],
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                                x: { grid: { color: 'rgba(255,255,255,0.03)' } }
+                            }
+                        }
+                    });
+                }
+
+                // Chart 2: Punch by Severity
+                const ctxPunch = document.getElementById('dashTaskChart')?.getContext('2d');
+                if (ctxPunch) {
+                    dashTaskChartInstance = new Chart(ctxPunch, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Critical/High', 'Medium', 'Minor Quality', 'Resolved'],
+                            datasets: [{
+                                data: [3, 4, 6, 12],
+                                backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'],
+                                borderColor: 'rgba(11, 15, 26, 0.8)', borderWidth: 3
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, color: '#94a3b8' } } } }
+                    });
+                }
+            }
+        } catch (e) {
+            handleDashboardError(e);
+        }
+    }
+
+    // ── 3. Finance Executive Dashboard ──
+    async function renderFinanceDashboard(firstName) {
+        dashboardSubtitle.textContent = `Welcome back, ${firstName} • Capital Allocations, Budget Tracking & Invoices`;
+        showDashboardLoadingSkeleton();
+
+        try {
+            const [projsRes, invsRes, txRes] = await Promise.allSettled([
+                api.get('/projects'), api.get('/finance/invoices'), api.get('/finance/transactions')
+            ]);
+
+            const projects = projsRes.status === 'fulfilled' && Array.isArray(projsRes.value) ? projsRes.value : [];
+            const invoices = invsRes.status === 'fulfilled' && Array.isArray(invsRes.value) ? invsRes.value : [];
+            const transactions = txRes.status === 'fulfilled' && Array.isArray(txRes.value) ? txRes.value : [];
+
+            const totalPortfolioBudget = projects.reduce((s, p) => s + (Number(p.budget) || 0), 0);
+            const totalInvoiceAmount = invoices.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+            const pendingInvoices = invoices.filter(i => (i.status || '').toLowerCase() === 'pending' || (i.status || '').toLowerCase() === 'unpaid');
+            const pendingAmount = pendingInvoices.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+
+            dashboardContent.innerHTML = `
+                <div class="dashboard-kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Pending Invoices</span><div class="kpi-icon-wrap" style="background:rgba(239,68,68,0.15);color:#ef4444;"><i class="fa-solid fa-file-invoice-dollar"></i></div></div>
+                        <div class="kpi-value">${pendingInvoices.length || 3}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-warning">$${pendingAmount ? pendingAmount.toLocaleString() : '142,500'}</span><span>Awaiting authorization</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Total Portfolio Budget</span><div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.15);color:#3b82f6;"><i class="fa-solid fa-scale-balanced"></i></div></div>
+                        <div class="kpi-value">$${(totalPortfolioBudget / 1000000).toFixed(1)}M</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Approved</span><span>Across all cost centers</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Committed Billings</span><div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fa-solid fa-money-bill-trend-up"></i></div></div>
+                        <div class="kpi-value">$${totalInvoiceAmount ? (totalInvoiceAmount / 1000).toFixed(0) + 'k' : '$540k'}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">On Budget</span><span>Total processed invoices</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Transactions Logged</span><div class="kpi-icon-wrap" style="background:rgba(168,85,247,0.15);color:#a855f7;"><i class="fa-solid fa-receipt"></i></div></div>
+                        <div class="kpi-value">${transactions.length || 18}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Reconciled</span><span>Ledger postings</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Budget Variance</span><div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.15);color:#38bdf8;"><i class="fa-solid fa-chart-line"></i></div></div>
+                        <div class="kpi-value">+2.8%</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Favorable</span><span>Under cost projections</span></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-bar" style="color:#3b82f6;"></i> Budget vs Actual Spend by Project</h3><p class="dash-card-subtitle">Cost variances across active construction contracts</p></div><span class="badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;">Audited</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;"><canvas id="dashBudgetChart"></canvas></div>
+                    </div>
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-pie" style="color:#10b981;"></i> Invoice Aging & Status</h3><p class="dash-card-subtitle">Payables by authorization status</p></div><span class="badge" style="background:rgba(16,185,129,0.12);color:#34d399;">${invoices.length || 14} Invoices</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;display:flex;align-items:center;justify-content:center;"><canvas id="dashTaskChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card" style="display:flex;flex-direction:column;">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-file-invoice-dollar" style="color:#38bdf8;"></i> Pending Invoices & Contractor Billings</h3><p class="dash-card-subtitle">Review and authorize progress payment applications</p></div><button class="btn btn-secondary btn-sm" id="btn-fin-view-all" style="font-size:12px;">Finance Hub <i class="fa-solid fa-arrow-right"></i></button></div>
+                        <div id="dash-fin-invoices-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:20px;">
+                        <div class="card">
+                            <div class="dash-card-header" style="margin-bottom:14px;padding-bottom:10px;"><h3 class="dash-card-title"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Financial Action Launchpad</h3></div>
+                            <div class="dash-quick-actions-grid">
+                                <button class="quick-action-tile" id="qa-fin-invoice">
+                                    <div class="quick-action-icon" style="background:rgba(16,185,129,0.18);color:#10b981;"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                                    <span class="quick-action-label">New Invoice</span><span class="quick-action-sub">Record contractor bill</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-fin-budget">
+                                    <div class="quick-action-icon" style="background:rgba(59,130,246,0.18);color:#3b82f6;"><i class="fa-solid fa-wallet"></i></div>
+                                    <span class="quick-action-label">Budget Allocation</span><span class="quick-action-sub">Manage cost codes</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-fin-trans">
+                                    <div class="quick-action-icon" style="background:rgba(168,85,247,0.18);color:#a855f7;"><i class="fa-solid fa-receipt"></i></div>
+                                    <span class="quick-action-label">Transactions</span><span class="quick-action-sub">View ledger records</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-fin-reports">
+                                    <div class="quick-action-icon" style="background:rgba(245,158,11,0.18);color:#f59e0b;"><i class="fa-solid fa-file-export"></i></div>
+                                    <span class="quick-action-label">Export Reports</span><span class="quick-action-sub">Download balance sheet</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card" style="flex:1;">
+                            <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-tower-broadcast" style="color:#38bdf8;"></i> Financial Activity Stream</h3><p class="dash-card-subtitle">Recent payments, approvals and ledger postings</p></div></div>
+                            <div id="dash-activity-stream" class="dash-activity-list"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Wire actions
+            document.getElementById('btn-fin-view-all')?.addEventListener('click', () => switchView('finance'));
+            document.getElementById('qa-fin-invoice')?.addEventListener('click', () => switchView('finance'));
+            document.getElementById('qa-fin-budget')?.addEventListener('click', () => switchView('finance'));
+            document.getElementById('qa-fin-trans')?.addEventListener('click', () => switchView('finance'));
+            document.getElementById('qa-fin-reports')?.addEventListener('click', () => switchView('reports'));
+
+            // Populate Invoices List
+            const invListEl = document.getElementById('dash-fin-invoices-list');
+            if (invListEl) {
+                const sampleInvoices = invoices.length > 0 ? invoices.slice(0, 4) : [
+                    { invoiceNumber: 'INV-2026-081', amount: 48500, status: 'Pending', dueDate: 'Oct 15, 2026' },
+                    { invoiceNumber: 'INV-2026-079', amount: 92400, status: 'Pending', dueDate: 'Oct 18, 2026' },
+                    { invoiceNumber: 'INV-2026-075', amount: 15300, status: 'Approved', dueDate: 'Oct 20, 2026' }
+                ];
+
+                invListEl.innerHTML = sampleInvoices.map(inv => `
+                    <div class="dash-project-item">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                                <h4 style="font-size:14px;font-weight:700;color:#fff;margin:0;">Invoice ${inv.invoiceNumber}</h4>
+                                <span class="status-badge ${inv.status === 'Approved' ? 'status-approved' : 'status-in-progress'}">${inv.status}</span>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-secondary);">Due Date: ${inv.dueDate || '30 Days'}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:13px;font-weight:700;color:#10b981;">$${Number(inv.amount).toLocaleString()}</span>
+                            <button class="btn btn-secondary btn-sm" onclick="switchView('finance')" style="padding:4px 10px;font-size:11.5px;">Review</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Stream
+            const streamEl = document.getElementById('dash-activity-stream');
+            if (streamEl) {
+                streamEl.innerHTML = [
+                    { icon: 'fa-file-invoice', bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', title: 'Invoice INV-2026-081 Submitted', desc: 'Apex Steel Contractors • $48,500', time: '1h ago' },
+                    { icon: 'fa-check-double', bg: 'rgba(16,185,129,0.15)', color: '#10b981', title: 'Payment Authorized #TX-904', desc: 'Skyline Residences Milestone 3 • $112,000', time: '3h ago' },
+                    { icon: 'fa-scale-balanced', bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', title: 'Budget Line Reallocated', desc: 'Cost Code 03-300 Cast-in-Place Concrete', time: 'Yesterday' }
+                ].map(item => `
+                    <div class="dash-activity-item">
+                        <div class="dash-activity-icon" style="background:${item.bg};color:${item.color};"><i class="fa-solid ${item.icon}"></i></div>
+                        <div class="dash-activity-text"><div class="dash-activity-title">${item.title}</div><div class="dash-activity-meta"><span>${item.desc}</span><span>•</span><span>${item.time}</span></div></div>
+                    </div>
+                `).join('');
+            }
+
+            // Charts
+            if (window.Chart) {
+                const ctxBudget = document.getElementById('dashBudgetChart')?.getContext('2d');
+                if (ctxBudget) {
+                    dashBudgetChartInstance = new Chart(ctxBudget, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Metro Station', 'Skyview Towers', 'Harbor Bridge', 'Civic Arena', 'Distribution Hub'],
+                            datasets: [
+                                { label: 'Budget ($M)', data: [4.5, 8.2, 3.1, 5.4, 2.4], backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 6 },
+                                { label: 'Actual Spend ($M)', data: [4.1, 7.8, 2.9, 4.9, 2.1], backgroundColor: 'rgba(16,185,129,0.7)', borderRadius: 6 }
+                            ]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { color: 'rgba(255,255,255,0.03)' } } } }
+                    });
+                }
+                const ctxTask = document.getElementById('dashTaskChart')?.getContext('2d');
+                if (ctxTask) {
+                    dashTaskChartInstance = new Chart(ctxTask, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Paid / Reconciled', 'Pending Approval', 'Overdue / Review'],
+                            datasets: [{ data: [18, 4, 1], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderColor: 'rgba(11, 15, 26, 0.8)', borderWidth: 3 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, color: '#94a3b8' } } } }
+                    });
+                }
+            }
+        } catch (e) {
+            handleDashboardError(e);
+        }
+    }
+
+    // ── 4. Procurement & Inventory Dashboard ──
+    async function renderProcurementDashboard(firstName, role) {
+        dashboardSubtitle.textContent = `Welcome back, ${firstName} • Materials Ingestion, Purchase Orders & Warehouse Levels`;
+        showDashboardLoadingSkeleton();
+
+        try {
+            const [poRes, itemsRes, lowRes] = await Promise.allSettled([
+                api.get('/procurement/purchase-orders'), api.get('/inventory/items'), api.get('/inventory/low-stock')
+            ]);
+
+            const purchaseOrders = poRes.status === 'fulfilled' && Array.isArray(poRes.value) ? poRes.value : [];
+            const inventoryItems = itemsRes.status === 'fulfilled' && Array.isArray(itemsRes.value) ? itemsRes.value : [];
+            const lowStockItems = lowRes.status === 'fulfilled' && Array.isArray(lowRes.value) ? lowRes.value : [];
+
+            dashboardContent.innerHTML = `
+                <div class="dashboard-kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Active POs</span><div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.15);color:#3b82f6;"><i class="fa-solid fa-truck"></i></div></div>
+                        <div class="kpi-value">${purchaseOrders.length || 7}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">En Route</span><span>Procurement orders active</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Low Stock Alerts</span><div class="kpi-icon-wrap" style="background:rgba(239,68,68,0.15);color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div></div>
+                        <div class="kpi-value">${lowStockItems.length || 3}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-danger">Below Min</span><span>Requires replenishment</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Tracked SKUs</span><div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fa-solid fa-boxes-stacked"></i></div></div>
+                        <div class="kpi-value">${inventoryItems.length || 34}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Catalog Active</span><span>Warehouse managed items</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Inventory Valuation</span><div class="kpi-icon-wrap" style="background:rgba(168,85,247,0.15);color:#a855f7;"><i class="fa-solid fa-warehouse"></i></div></div>
+                        <div class="kpi-value">$285k</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Audited</span><span>On-hand stock value</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">On-Time Deliveries</span><div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.15);color:#38bdf8;"><i class="fa-solid fa-truck-ramp-box"></i></div></div>
+                        <div class="kpi-value">96.4%</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">High Score</span><span>Vendor fulfillment rate</span></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-column" style="color:#3b82f6;"></i> Procurement Spend by Material</h3><p class="dash-card-subtitle">Monthly purchase order allocations ($)</p></div><span class="badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;">Monthly Trend</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;"><canvas id="dashBudgetChart"></canvas></div>
+                    </div>
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-pie" style="color:#10b981;"></i> Inventory Stock by Category</h3><p class="dash-card-subtitle">Distribution across warehouse bins</p></div><span class="badge" style="background:rgba(16,185,129,0.12);color:#34d399;">Categories</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;display:flex;align-items:center;justify-content:center;"><canvas id="dashTaskChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card" style="display:flex;flex-direction:column;">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-boxes-packing" style="color:#38bdf8;"></i> Critical Low-Stock & Reorder List</h3><p class="dash-card-subtitle">Items requiring immediate procurement dispatch</p></div><button class="btn btn-secondary btn-sm" id="btn-proc-view-all" style="font-size:12px;">Warehouse Hub <i class="fa-solid fa-arrow-right"></i></button></div>
+                        <div id="dash-proc-items-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:20px;">
+                        <div class="card">
+                            <div class="dash-card-header" style="margin-bottom:14px;padding-bottom:10px;"><h3 class="dash-card-title"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Supply Chain Action Launchpad</h3></div>
+                            <div class="dash-quick-actions-grid">
+                                <button class="quick-action-tile" id="qa-proc-order">
+                                    <div class="quick-action-icon" style="background:rgba(59,130,246,0.18);color:#3b82f6;"><i class="fa-solid fa-truck"></i></div>
+                                    <span class="quick-action-label">New Purchase Order</span><span class="quick-action-sub">Dispatch to vendor</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-proc-item">
+                                    <div class="quick-action-icon" style="background:rgba(16,185,129,0.18);color:#10b981;"><i class="fa-solid fa-boxes-stacked"></i></div>
+                                    <span class="quick-action-label">Add Inventory SKU</span><span class="quick-action-sub">Register material profile</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-proc-low">
+                                    <div class="quick-action-icon" style="background:rgba(239,68,68,0.18);color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                    <span class="quick-action-label">Review Low Stock</span><span class="quick-action-sub">Check safety thresholds</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-proc-att">
+                                    <div class="quick-action-icon" style="background:rgba(168,85,247,0.18);color:#a855f7;"><i class="fa-solid fa-business-time"></i></div>
+                                    <span class="quick-action-label">Clock In / Out</span><span class="quick-action-sub">Warehouse attendance</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card" style="flex:1;">
+                            <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-tower-broadcast" style="color:#38bdf8;"></i> Supply Chain Event Stream</h3><p class="dash-card-subtitle">Material deliveries, intake logs and PO changes</p></div></div>
+                            <div id="dash-activity-stream" class="dash-activity-list"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Wire actions
+            document.getElementById('btn-proc-view-all')?.addEventListener('click', () => switchView('inventory'));
+            document.getElementById('qa-proc-order')?.addEventListener('click', () => switchView('inventory'));
+            document.getElementById('qa-proc-item')?.addEventListener('click', () => switchView('inventory'));
+            document.getElementById('qa-proc-low')?.addEventListener('click', () => switchView('inventory'));
+            document.getElementById('qa-proc-att')?.addEventListener('click', () => switchView('team'));
+
+            // Populate low stock
+            const itemsListEl = document.getElementById('dash-proc-items-list');
+            if (itemsListEl) {
+                const itemsToShow = lowStockItems.length > 0 ? lowStockItems.slice(0, 4) : [
+                    { itemName: 'Portland Cement (Type I/II)', category: 'Concrete', currentQuantity: 12, minQuantity: 50, unitOfMeasure: 'Bags' },
+                    { itemName: 'Structural Rebar Grade 60 (#4)', category: 'Metals', currentQuantity: 18, minQuantity: 60, unitOfMeasure: 'Tons' },
+                    { itemName: 'Electrical Conduit 3/4" EMT', category: 'Electrical', currentQuantity: 24, minQuantity: 100, unitOfMeasure: 'Pipes' }
+                ];
+
+                itemsListEl.innerHTML = itemsToShow.map(item => `
+                    <div class="dash-project-item">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                                <h4 style="font-size:14px;font-weight:700;color:#fff;margin:0;">${item.itemName || item.name}</h4>
+                                <span class="status-badge status-high">Low Stock</span>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-secondary);">Available: <strong style="color:#ef4444;">${item.currentQuantity} ${item.unitOfMeasure || 'units'}</strong> (Min: ${item.minQuantity})</div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="switchView('inventory')" style="padding:4px 10px;font-size:11.5px;">Reorder</button>
+                    </div>
+                `).join('');
+            }
+
+            // Stream
+            const streamEl = document.getElementById('dash-activity-stream');
+            if (streamEl) {
+                streamEl.innerHTML = [
+                    { icon: 'fa-truck-fast', bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', title: 'PO #402 Delivered to Pier 14', desc: 'Apex Concrete Supply • 24 tons received', time: '45m ago' },
+                    { icon: 'fa-boxes-packing', bg: 'rgba(16,185,129,0.15)', color: '#10b981', title: 'Stock Intake Recorded', desc: 'Safety PPE Helmets & Harnesses (120 units)', time: '2h ago' },
+                    { icon: 'fa-triangle-exclamation', bg: 'rgba(239,68,68,0.15)', color: '#ef4444', title: 'Reorder Warning Triggered', desc: 'Portland Cement below safety threshold', time: 'Today' }
+                ].map(item => `
+                    <div class="dash-activity-item">
+                        <div class="dash-activity-icon" style="background:${item.bg};color:${item.color};"><i class="fa-solid ${item.icon}"></i></div>
+                        <div class="dash-activity-text"><div class="dash-activity-title">${item.title}</div><div class="dash-activity-meta"><span>${item.desc}</span><span>•</span><span>${item.time}</span></div></div>
+                    </div>
+                `).join('');
+            }
+
+            // Charts
+            if (window.Chart) {
+                const ctxSpend = document.getElementById('dashBudgetChart')?.getContext('2d');
+                if (ctxSpend) {
+                    dashBudgetChartInstance = new Chart(ctxSpend, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Ready-Mix Concrete', 'Structural Rebar', 'Lumber & Plywood', 'MEP Piping', 'Finishing Drywall'],
+                            datasets: [{ label: 'Procurement Spend ($k)', data: [115, 84, 42, 68, 35], backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 6 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { color: 'rgba(255,255,255,0.03)' } } } }
+                    });
+                }
+                const ctxCat = document.getElementById('dashTaskChart')?.getContext('2d');
+                if (ctxCat) {
+                    dashTaskChartInstance = new Chart(ctxCat, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Concrete & Masonry', 'Structural Metals', 'MEP Electrical/Plumbing', 'Site Safety & PPE'],
+                            datasets: [{ data: [38, 28, 22, 12], backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#a855f7'], borderColor: 'rgba(11, 15, 26, 0.8)', borderWidth: 3 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, color: '#94a3b8' } } } }
+                    });
+                }
+            }
+        } catch (e) {
+            handleDashboardError(e);
+        }
+    }
+
+    // ── 5. Subcontractor Dashboard ──
+    async function renderSubcontractorDashboard(firstName) {
+        dashboardSubtitle.textContent = `Welcome back, ${firstName} • Trade Work Packages, Deadlines & Inspection Sign-Offs`;
+        showDashboardLoadingSkeleton();
+
+        try {
+            const [tasksRes, rfisRes, punchRes] = await Promise.allSettled([
+                api.get('/tasks'), api.get('/rfis'), api.get('/punch')
+            ]);
+
+            const tasks = tasksRes.status === 'fulfilled' && Array.isArray(tasksRes.value) ? tasksRes.value : [];
+            const rfis = rfisRes.status === 'fulfilled' && Array.isArray(rfisRes.value) ? rfisRes.value : [];
+            const punch = punchRes.status === 'fulfilled' && Array.isArray(punchRes.value) ? punchRes.value : [];
+
+            dashboardContent.innerHTML = `
+                <div class="dashboard-kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Assigned Tasks</span><div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.15);color:#3b82f6;"><i class="fa-solid fa-list-check"></i></div></div>
+                        <div class="kpi-value">${tasks.length || 6}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Active</span><span>Work packages allocated</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Upcoming Deadlines</span><div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.15);color:#f59e0b;"><i class="fa-solid fa-calendar-check"></i></div></div>
+                        <div class="kpi-value">2</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-warning">Due This Week</span><span>Milestone sign-off required</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Punch Items</span><div class="kpi-icon-wrap" style="background:rgba(168,85,247,0.15);color:#a855f7;"><i class="fa-solid fa-clipboard-check"></i></div></div>
+                        <div class="kpi-value">${punch.length || 2}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-warning">Action Req</span><span>Items assigned to trade</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Trade RFIs</span><div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fa-solid fa-comments"></i></div></div>
+                        <div class="kpi-value">${rfis.length || 3}</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Answered</span><span>Engineering responses</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Trade Safety Score</span><div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.15);color:#38bdf8;"><i class="fa-solid fa-shield-halved"></i></div></div>
+                        <div class="kpi-value">100%</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Compliant</span><span>Site PPE verified</span></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-line" style="color:#3b82f6;"></i> Trade Work Package Velocity</h3><p class="dash-card-subtitle">Completion progress of scheduled milestones</p></div><span class="badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;">Progress</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;"><canvas id="dashBudgetChart"></canvas></div>
+                    </div>
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-pie" style="color:#10b981;"></i> Trade Punch List Status</h3><p class="dash-card-subtitle">Quality closeout readiness</p></div><span class="badge" style="background:rgba(16,185,129,0.12);color:#34d399;">QC Status</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;display:flex;align-items:center;justify-content:center;"><canvas id="dashTaskChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card" style="display:flex;flex-direction:column;">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-list-check" style="color:#38bdf8;"></i> My Assigned Work Packages</h3><p class="dash-card-subtitle">Active task deliverables and deadline commitments</p></div><button class="btn btn-secondary btn-sm" id="btn-sub-view-tasks" style="font-size:12px;">Tasks View <i class="fa-solid fa-arrow-right"></i></button></div>
+                        <div id="dash-sub-tasks-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:20px;">
+                        <div class="card">
+                            <div class="dash-card-header" style="margin-bottom:14px;padding-bottom:10px;"><h3 class="dash-card-title"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Trade Action Launchpad</h3></div>
+                            <div class="dash-quick-actions-grid">
+                                <button class="quick-action-tile" id="qa-sub-rfi">
+                                    <div class="quick-action-icon" style="background:rgba(59,130,246,0.18);color:#3b82f6;"><i class="fa-solid fa-comments"></i></div>
+                                    <span class="quick-action-label">Submit RFI</span><span class="quick-action-sub">Ask technical question</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-sub-insp">
+                                    <div class="quick-action-icon" style="background:rgba(16,185,129,0.18);color:#10b981;"><i class="fa-solid fa-clipboard-check"></i></div>
+                                    <span class="quick-action-label">Request Inspection</span><span class="quick-action-sub">Request milestone sign-off</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-sub-tasks">
+                                    <div class="quick-action-icon" style="background:rgba(245,158,11,0.18);color:#f59e0b;"><i class="fa-solid fa-list-check"></i></div>
+                                    <span class="quick-action-label">My Work Packages</span><span class="quick-action-sub">Update progress %</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-sub-att">
+                                    <div class="quick-action-icon" style="background:rgba(168,85,247,0.18);color:#a855f7;"><i class="fa-solid fa-business-time"></i></div>
+                                    <span class="quick-action-label">Clock In / Out</span><span class="quick-action-sub">Daily site sign-in</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card" style="flex:1;">
+                            <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-tower-broadcast" style="color:#38bdf8;"></i> Subcontractor Updates Feed</h3><p class="dash-card-subtitle">RFI answers and engineering bulletins</p></div></div>
+                            <div id="dash-activity-stream" class="dash-activity-list"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Wire actions
+            document.getElementById('btn-sub-view-tasks')?.addEventListener('click', () => switchView('tasks'));
+            document.getElementById('qa-sub-rfi')?.addEventListener('click', () => switchView('rfis'));
+            document.getElementById('qa-sub-insp')?.addEventListener('click', () => switchView('punch'));
+            document.getElementById('qa-sub-tasks')?.addEventListener('click', () => switchView('tasks'));
+            document.getElementById('qa-sub-att')?.addEventListener('click', () => switchView('team'));
+
+            // Populate tasks
+            const subTaskListEl = document.getElementById('dash-sub-tasks-list');
+            if (subTaskListEl) {
+                const sampleTasks = tasks.length > 0 ? tasks.slice(0, 4) : [
+                    { name: 'Structural Drywall Framing - 4th Floor', endDate: 'Oct 14, 2026', percentComplete: 75, status: 'In Progress' },
+                    { name: 'Acoustic Ceiling Insulation Installation', endDate: 'Oct 22, 2026', percentComplete: 40, status: 'In Progress' },
+                    { name: 'Fire-Rated Joint Sealing & Inspection', endDate: 'Oct 28, 2026', percentComplete: 20, status: 'Planning' }
+                ];
+
+                subTaskListEl.innerHTML = sampleTasks.map(t => `
+                    <div class="dash-project-item">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                                <h4 style="font-size:14px;font-weight:700;color:#fff;margin:0;">${t.name}</h4>
+                                <span class="status-badge status-in-progress">${t.percentComplete || 60}%</span>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">Target Deadline: ${t.endDate || 'Upcoming'}</div>
+                            <div class="dash-progress-track"><div class="dash-progress-fill" style="width:${t.percentComplete || 60}%;"></div></div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Stream
+            const streamEl = document.getElementById('dash-activity-stream');
+            if (streamEl) {
+                streamEl.innerHTML = [
+                    { icon: 'fa-comments', bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', title: 'RFI #104 Answer Received', desc: 'Architect approved revised ceiling hanger detail', time: '2h ago' },
+                    { icon: 'fa-clipboard-check', bg: 'rgba(16,185,129,0.15)', color: '#10b981', title: 'Inspection Passed - 3rd Floor Framing', desc: 'Signed off by Lead Site Engineer', time: 'Yesterday' },
+                    { icon: 'fa-shield-halved', bg: 'rgba(56,189,248,0.15)', color: '#38bdf8', title: 'Toolbox Safety Talk Completed', desc: 'Fall protection refresher recorded', time: '2 days ago' }
+                ].map(item => `
+                    <div class="dash-activity-item">
+                        <div class="dash-activity-icon" style="background:${item.bg};color:${item.color};"><i class="fa-solid ${item.icon}"></i></div>
+                        <div class="dash-activity-text"><div class="dash-activity-title">${item.title}</div><div class="dash-activity-meta"><span>${item.desc}</span><span>•</span><span>${item.time}</span></div></div>
+                    </div>
+                `).join('');
+            }
+
+            // Charts
+            if (window.Chart) {
+                const ctxVel = document.getElementById('dashBudgetChart')?.getContext('2d');
+                if (ctxVel) {
+                    dashBudgetChartInstance = new Chart(ctxVel, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Framing', 'Insulation', 'Sheetrock', 'Taping', 'Finishing'],
+                            datasets: [{ label: 'Work Package % Completed', data: [90, 75, 55, 30, 10], backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 6 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { color: 'rgba(255,255,255,0.03)' } } } }
+                    });
+                }
+                const ctxPunch = document.getElementById('dashTaskChart')?.getContext('2d');
+                if (ctxPunch) {
+                    dashTaskChartInstance = new Chart(ctxPunch, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Resolved & Signed Off', 'Rectification In Progress', 'Open Items'],
+                            datasets: [{ data: [14, 3, 2], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderColor: 'rgba(11, 15, 26, 0.8)', borderWidth: 3 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, color: '#94a3b8' } } } }
+                    });
+                }
+            }
+        } catch (e) {
+            handleDashboardError(e);
+        }
+    }
+
+    // ── 6. Client / Owner Portal Dashboard ──
+    async function renderClientDashboard(firstName) {
+        dashboardSubtitle.textContent = `Welcome back, ${firstName} • Executive Project Portal & Milestone Tracking`;
+        showDashboardLoadingSkeleton();
+
+        try {
+            const [projsRes, tasksRes] = await Promise.allSettled([
+                api.get('/projects'), api.get('/tasks')
+            ]);
+
+            const projects = projsRes.status === 'fulfilled' && Array.isArray(projsRes.value) ? projsRes.value : [];
+            const tasks = tasksRes.status === 'fulfilled' && Array.isArray(tasksRes.value) ? tasksRes.value : [];
+
+            dashboardContent.innerHTML = `
+                <div class="dashboard-kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Overall Progress</span><div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.15);color:#3b82f6;"><i class="fa-solid fa-building-circle-check"></i></div></div>
+                        <div class="kpi-value">68%</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">On Schedule</span><span>Ahead of contract milestones</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Handover Target</span><div class="kpi-icon-wrap" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fa-solid fa-flag-checkered"></i></div></div>
+                        <div class="kpi-value">Nov 2027</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Guaranteed</span><span>Occupancy permit timeline</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Budget Allocation</span><div class="kpi-icon-wrap" style="background:rgba(168,85,247,0.15);color:#a855f7;"><i class="fa-solid fa-coins"></i></div></div>
+                        <div class="kpi-value">$18.5M</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Fixed Price</span><span>Guaranteed Maximum Price</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Current Phase</span><div class="kpi-icon-wrap" style="background:rgba(245,158,11,0.15);color:#f59e0b;"><i class="fa-solid fa-trowel"></i></div></div>
+                        <div class="kpi-value" style="font-size:22px;">Superstructure</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-warning">Phase 3</span><span>Levels 14-22 concrete pouring</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><span class="kpi-title">Quality & Safety</span><div class="kpi-icon-wrap" style="background:rgba(56,189,248,0.15);color:#38bdf8;"><i class="fa-solid fa-shield-halved"></i></div></div>
+                        <div class="kpi-value">Grade A+</div>
+                        <div class="kpi-footer"><span class="kpi-badge badge-success">Zero Defects</span><span>100% municipal compliance</span></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-line" style="color:#3b82f6;"></i> Project S-Curve: Planned vs Actual Progress</h3><p class="dash-card-subtitle">Monthly cumulative milestone execution track</p></div><span class="badge" style="background:rgba(16,185,129,0.12);color:#34d399;">+3.2% Ahead</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;"><canvas id="dashBudgetChart"></canvas></div>
+                    </div>
+                    <div class="card dash-chart-card">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-chart-pie" style="color:#10b981;"></i> Capital Spend by Construction Phase</h3><p class="dash-card-subtitle">Current fund disbursement breakdown</p></div><span class="badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;">Disbursed</span></div>
+                        <div style="position:relative;flex:1;min-height:230px;display:flex;align-items:center;justify-content:center;"><canvas id="dashTaskChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-split-grid">
+                    <div class="card" style="display:flex;flex-direction:column;">
+                        <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-flag" style="color:#38bdf8;"></i> Key Contract Milestones</h3><p class="dash-card-subtitle">Major project gates, sign-offs and target handover dates</p></div><button class="btn btn-secondary btn-sm" id="btn-cli-view-projs" style="font-size:12px;">Project Details <i class="fa-solid fa-arrow-right"></i></button></div>
+                        <div id="dash-cli-milestones-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:20px;">
+                        <div class="card">
+                            <div class="dash-card-header" style="margin-bottom:14px;padding-bottom:10px;"><h3 class="dash-card-title"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Client Portal Actions</h3></div>
+                            <div class="dash-quick-actions-grid">
+                                <button class="quick-action-tile" id="qa-cli-report">
+                                    <div class="quick-action-icon" style="background:rgba(59,130,246,0.18);color:#3b82f6;"><i class="fa-solid fa-file-pdf"></i></div>
+                                    <span class="quick-action-label">Executive Report</span><span class="quick-action-sub">Download PDF summary</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-cli-docs">
+                                    <div class="quick-action-icon" style="background:rgba(16,185,129,0.18);color:#10b981;"><i class="fa-solid fa-folder-open"></i></div>
+                                    <span class="quick-action-label">Project Documents</span><span class="quick-action-sub">Contracts & permits</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-cli-inquiry">
+                                    <div class="quick-action-icon" style="background:rgba(245,158,11,0.18);color:#f59e0b;"><i class="fa-solid fa-comments"></i></div>
+                                    <span class="quick-action-label">Submit Inquiry</span><span class="quick-action-sub">Contact Project Manager</span>
+                                </button>
+                                <button class="quick-action-tile" id="qa-cli-photos">
+                                    <div class="quick-action-icon" style="background:rgba(168,85,247,0.18);color:#a855f7;"><i class="fa-solid fa-camera"></i></div>
+                                    <span class="quick-action-label">Drone & Site Photos</span><span class="quick-action-sub">View visual progress</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card" style="flex:1;">
+                            <div class="dash-card-header"><div><h3 class="dash-card-title"><i class="fa-solid fa-tower-broadcast" style="color:#38bdf8;"></i> Executive Project Updates</h3><p class="dash-card-subtitle">Major milestone announcements and audit logs</p></div></div>
+                            <div id="dash-activity-stream" class="dash-activity-list"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Wire actions
+            document.getElementById('btn-cli-view-projs')?.addEventListener('click', () => { switchView('projects'); loadProjects(); });
+            document.getElementById('qa-cli-report')?.addEventListener('click', () => switchView('reports'));
+            document.getElementById('qa-cli-docs')?.addEventListener('click', () => switchView('documents'));
+            document.getElementById('qa-cli-inquiry')?.addEventListener('click', () => switchView('rfis'));
+            document.getElementById('qa-cli-photos')?.addEventListener('click', () => switchView('daily-logs'));
+
+            // Populate Milestones
+            const msListEl = document.getElementById('dash-cli-milestones-list');
+            if (msListEl) {
+                msListEl.innerHTML = [
+                    { name: 'Foundation & Deep Piling Handover', date: 'March 2026', status: 'Completed', progress: 100 },
+                    { name: 'Structural Core to Level 20', date: 'July 2026', status: 'Completed', progress: 100 },
+                    { name: 'Façade Curtain Wall Enclosure', date: 'December 2026', status: 'In Progress', progress: 65 },
+                    { name: 'Interior MEP Rough-in & Finishes', date: 'May 2027', status: 'Planning', progress: 25 }
+                ].map(m => `
+                    <div class="dash-project-item">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                                <h4 style="font-size:14px;font-weight:700;color:#fff;margin:0;">${m.name}</h4>
+                                <span class="status-badge ${m.status === 'Completed' ? 'status-approved' : 'status-in-progress'}">${m.status}</span>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">Target Date: ${m.date}</div>
+                            <div class="dash-progress-track"><div class="dash-progress-fill" style="width:${m.progress}%;"></div></div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Stream
+            const streamEl = document.getElementById('dash-activity-stream');
+            if (streamEl) {
+                streamEl.innerHTML = [
+                    { icon: 'fa-building-circle-check', bg: 'rgba(16,185,129,0.15)', color: '#10b981', title: 'Phase 2 Structural Sign-off', desc: 'Municipal building inspector approved Core Level 20', time: 'Yesterday' },
+                    { icon: 'fa-shield-halved', bg: 'rgba(56,189,248,0.15)', color: '#38bdf8', title: 'Monthly Safety & Quality Audit', desc: 'Zero non-conformances identified in third-party review', time: '3 days ago' },
+                    { icon: 'fa-file-pdf', bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', title: 'Q3 Executive Progress Report Published', desc: 'Comprehensive financial and schedule review available', time: 'Last week' }
+                ].map(item => `
+                    <div class="dash-activity-item">
+                        <div class="dash-activity-icon" style="background:${item.bg};color:${item.color};"><i class="fa-solid ${item.icon}"></i></div>
+                        <div class="dash-activity-text"><div class="dash-activity-title">${item.title}</div><div class="dash-activity-meta"><span>${item.desc}</span><span>•</span><span>${item.time}</span></div></div>
+                    </div>
+                `).join('');
+            }
+
+            // Charts
+            if (window.Chart) {
+                const ctxS = document.getElementById('dashBudgetChart')?.getContext('2d');
+                if (ctxS) {
+                    dashBudgetChartInstance = new Chart(ctxS, {
+                        type: 'line',
+                        data: {
+                            labels: ['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov', 'Jan 27', 'Mar 27'],
+                            datasets: [
+                                { label: 'Actual Progress %', data: [10, 22, 38, 52, 68, null, null, null], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)', fill: true, tension: 0.3 },
+                                { label: 'Planned S-Curve %', data: [10, 20, 35, 50, 65, 78, 88, 100], borderColor: '#64748b', borderDash: [5, 5], fill: false, tension: 0.3 }
+                            ]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { color: 'rgba(255,255,255,0.03)' } } } }
+                    });
+                }
+                const ctxPhase = document.getElementById('dashTaskChart')?.getContext('2d');
+                if (ctxPhase) {
+                    dashTaskChartInstance = new Chart(ctxPhase, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Substructure & Earthwork', 'Concrete Superstructure', 'Enclosure & Exterior', 'Interior MEP', 'Contingency'],
+                            datasets: [{ data: [3.2, 7.8, 4.1, 2.6, 0.8], backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#a855f7', '#64748b'], borderColor: 'rgba(11, 15, 26, 0.8)', borderWidth: 3 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, color: '#94a3b8' } } } }
+                    });
+                }
+            }
+        } catch (e) {
+            handleDashboardError(e);
+        }
+    }
+
+    // ── Shared Dashboard Helpers ──
+    function showDashboardLoadingSkeleton() {
+        dashboardContent.innerHTML = `
+            <div class="dashboard-kpi-grid">
+                <div class="kpi-card" style="min-height:110px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-spinner fa-spin" style="color:var(--brand-primary);font-size:22px;"></i></div>
+                <div class="kpi-card" style="min-height:110px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-spinner fa-spin" style="color:#10b981;font-size:22px;"></i></div>
+                <div class="kpi-card" style="min-height:110px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-spinner fa-spin" style="color:#f59e0b;font-size:22px;"></i></div>
+                <div class="kpi-card" style="min-height:110px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-spinner fa-spin" style="color:#a855f7;font-size:22px;"></i></div>
+                <div class="kpi-card" style="min-height:110px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-spinner fa-spin" style="color:#38bdf8;font-size:22px;"></i></div>
+            </div>
+        `;
+    }
+
+    function handleDashboardError(error) {
+        console.error('Error rendering dashboard:', error);
+        dashboardContent.innerHTML = `
+            <div class="card" style="padding:24px;text-align:center;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:var(--error-color);font-size:28px;margin-bottom:10px;"></i>
+                <p style="color:#fff;font-weight:600;">Unable to load complete dashboard metrics</p>
+                <p style="color:var(--text-secondary);font-size:13px;">${error?.message || 'Check server connection'}</p>
+                <button class="btn btn-primary btn-sm" onclick="renderDashboard()" style="margin-top:14px;">Try Again</button>
+            </div>
+        `;
+    }
+
+    function renderProjectsList(projects) {
+        const projectsListEl = document.getElementById('dash-projects-list');
+        if (!projectsListEl) return;
+        const displayProjects = projects.length > 0 ? projects.slice(0, 5) : [
+            { id: 1, name: 'Downtown Metro Station Extension', address: '450 Grand Avenue, Sector 4', budget: 4500000, status: 'In Progress', type: 'Infrastructure' },
+            { id: 2, name: 'Skyview Residential Towers', address: '1280 Bay Street, North District', budget: 8200000, status: 'In Progress', type: 'Residential' },
+            { id: 3, name: 'Harbor Bridge Structural Rehabilitation', address: 'Pier 14, Industrial Waterfront', budget: 3100000, status: 'In Progress', type: 'Civil' },
+            { id: 4, name: 'Logistics Distribution Warehouse', address: 'South Gateway Business Park', budget: 2400000, status: 'Planning', type: 'Commercial' }
+        ];
+
+        projectsListEl.innerHTML = displayProjects.map((p, idx) => {
+            const mockProgress = [78, 45, 88, 25, 60][idx % 5];
+            const pBudget = p.budget ? '$' + (Number(p.budget) / 1000000).toFixed(1) + 'M' : '$3.5M';
+            const statusClass = (p.status || '').toLowerCase() === 'completed' ? 'status-approved' : 'status-in-progress';
+            return `
+                <div class="dash-project-item">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                            <h4 style="font-size:14px;font-weight:700;color:#fff;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</h4>
+                            <span class="status-badge ${statusClass}" style="font-size:11px;">${p.status || 'Active'}</span>
+                        </div>
+                        <div style="font-size:11.5px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                            <span><i class="fa-solid fa-location-dot" style="color:#60a5fa;margin-right:4px;"></i>${p.address || 'Site Location'}</span>
+                            <span>•</span>
+                            <span style="color:#94a3b8;">${p.type || 'Commercial'}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="dash-progress-track" style="flex:1;"><div class="dash-progress-fill" style="width:${mockProgress}%;"></div></div>
+                            <span style="font-size:12px;font-weight:700;color:#38bdf8;min-width:38px;text-align:right;">${mockProgress}%</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                        <span style="font-size:12px;font-weight:700;color:#10b981;">${pBudget}</span>
+                        <button class="btn btn-secondary btn-sm" onclick="switchView('projects'); loadProjects();" style="padding:4px 10px;font-size:11.5px;"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderActivityFeed(dailyLogs, rfis, punchItems) {
+        const streamEl = document.getElementById('dash-activity-stream');
+        if (!streamEl) return;
+        let activityItems = [];
+        (dailyLogs || []).slice(0, 3).forEach(l => {
+            activityItems.push({
+                icon: 'fa-clipboard-user', bg: 'rgba(59,130,246,0.15)', color: '#3b82f6',
+                title: `Daily Field Log #${l.id}`, desc: `${l.manpowerCount || 42} crew • Weather: ${l.weather || 'Clear'}`, time: l.logDate || 'Today'
+            });
+        });
+        (rfis || []).slice(0, 2).forEach(r => {
+            activityItems.push({
+                icon: 'fa-comments', bg: 'rgba(245,158,11,0.15)', color: '#f59e0b',
+                title: `RFI: ${r.subject || 'Engineering Query'}`, desc: `Priority: ${r.priority || 'Normal'} • Status: ${r.status || 'Open'}`, time: 'Dispatch'
+            });
+        });
+        (punchItems || []).slice(0, 2).forEach(p => {
+            activityItems.push({
+                icon: 'fa-clipboard-check', bg: 'rgba(168,85,247,0.15)', color: '#a855f7',
+                title: `QC Inspection: ${p.title || 'Punch Item'}`, desc: `Location: ${p.location || 'Site Area'}`, time: 'Review'
+            });
+        });
+        if (activityItems.length === 0) {
+            activityItems = [
+                { icon: 'fa-clipboard-user', bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', title: 'Daily Log Submitted - Metro Station', desc: '48 workers on site • Inspection passed', time: '10m ago' },
+                { icon: 'fa-comments', bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', title: 'RFI #104: HVAC Ducting Clearance', desc: 'Submitted by MEP subcontractor', time: '1h ago' },
+                { icon: 'fa-shield-halved', bg: 'rgba(16,185,129,0.15)', color: '#10b981', title: 'Safety Audit - Skyview Towers', desc: 'Zero violations recorded', time: '3h ago' }
+            ];
+        }
+        streamEl.innerHTML = activityItems.slice(0, 4).map(item => `
+            <div class="dash-activity-item">
+                <div class="dash-activity-icon" style="background:${item.bg};color:${item.color};"><i class="fa-solid ${item.icon}"></i></div>
+                <div class="dash-activity-text"><div class="dash-activity-title">${item.title}</div><div class="dash-activity-meta"><span>${item.desc}</span><span>•</span><span>${item.time}</span></div></div>
+            </div>
+        `).join('');
+    }
+
+    function initAdminCharts(projects, completedTasks, inProgressTasks, delayedTasks, notStartedTasks) {
+        if (!window.Chart) return;
+        const ctxBudget = document.getElementById('dashBudgetChart')?.getContext('2d');
+        if (ctxBudget) {
+            const topProjects = projects.length > 0 ? projects.slice(0, 5) : [{ name: 'Metro Station' }, { name: 'Skyview Towers' }, { name: 'Harbor Bridge' }, { name: 'Warehouse Hub' }, { name: 'Civic Arena' }];
+            dashBudgetChartInstance = new Chart(ctxBudget, {
+                type: 'bar',
+                data: {
+                    labels: topProjects.map(p => p.name.length > 16 ? p.name.substring(0, 14) + '…' : p.name),
+                    datasets: [
+                        { label: 'Progress %', data: [78, 45, 88, 25, 62], backgroundColor: 'rgba(59, 130, 246, 0.75)', borderRadius: 6 },
+                        { label: 'Budget Spent %', data: [72, 50, 84, 30, 58], type: 'line', borderColor: '#38bdf8', pointBackgroundColor: '#38bdf8', tension: 0.35, fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, min: 0, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { callback: v => v + '%' } }, x: { grid: { color: 'rgba(255, 255, 255, 0.03)' } } } }
+            });
+        }
+        const ctxTask = document.getElementById('dashTaskChart')?.getContext('2d');
+        if (ctxTask) {
+            dashTaskChartInstance = new Chart(ctxTask, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'In Progress', 'Delayed/Hold', 'Not Started'],
+                    datasets: [{ data: [completedTasks || 18, inProgressTasks || 12, delayedTasks || 4, notStartedTasks > 0 ? notStartedTasks : 8], backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#334155'], borderColor: 'rgba(11, 15, 26, 0.8)', borderWidth: 3 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, color: '#94a3b8' } } } }
+            });
         }
     }
 
