@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface PunchItemRepository extends JpaRepository<PunchItem, Long> {
     List<PunchItem> findByProjectIdOrderByOpenedDateDesc(Long projectId);
+    List<PunchItem> findByProjectIdInOrderByOpenedDateDesc(List<Long> projectIds);
+    void deleteByProjectId(Long projectId);
 }

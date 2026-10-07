@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface DailyLogRepository extends JpaRepository<DailyLog, Long> {
     List<DailyLog> findByProjectIdOrderByLogDateDesc(Long projectId);
+    List<DailyLog> findByProjectIdInOrderByLogDateDesc(List<Long> projectIds);
+    void deleteByProjectId(Long projectId);
 }

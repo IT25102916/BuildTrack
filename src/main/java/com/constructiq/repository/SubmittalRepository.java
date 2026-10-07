@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface SubmittalRepository extends JpaRepository<Submittal, Long> {
     List<Submittal> findByProjectId(Long projectId);
+    List<Submittal> findByProjectIdIn(List<Long> projectIds);
+    void deleteByProjectId(Long projectId);
 }

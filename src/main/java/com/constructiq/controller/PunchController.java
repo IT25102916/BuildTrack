@@ -16,9 +16,19 @@ import com.constructiq.security.RequireRole;
 public class PunchController {
 
     @Autowired private PunchItemRepository punchItemRepository;
+    @Autowired private com.constructiq.repository.UserRepository userRepository;
+    @Autowired private com.constructiq.service.ProjectService projectService;
 
     @GetMapping
-    public List<PunchItem> getAll() {
+    public List<PunchItem> getAll(jakarta.servlet.http.HttpSession session) {
+        Long userId = (session != null) ? (Long) session.getAttribute("userId") : null;
+        if (userId != null) {
+            com.constructiq.model.User user = userRepository.findById(userId).orElse(null);
+            if (user != null && !"admin".equalsIgnoreCase(user.getRole())) {
+                List<Long> pIds = projectService.getAccessibleProjectIds(userId, user.getRole());
+                return pIds.isEmpty() ? List.of() : punchItemRepository.findByProjectIdInOrderByOpenedDateDesc(pIds);
+            }
+        }
         return punchItemRepository.findAll();
     }
 
@@ -32,7 +42,7 @@ public class PunchController {
     public PunchItem create(@RequestBody PunchItem item) { return punchItemRepository.save(item); }
 
     @PutMapping("/{id}")
-    @RequireRole({"site_engineer", "pm", "admin"})
+    @RequireRole({"site_engineer", "pm", "admin", "subcontractor"})
     public ResponseEntity<PunchItem> update(@PathVariable Long id, @RequestBody PunchItem updates) {
         return punchItemRepository.findById(id).map(p -> {
             if (updates.getLocation() != null) p.setLocation(updates.getLocation());

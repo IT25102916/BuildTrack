@@ -2595,6 +2595,12 @@ document.addEventListener('DOMContentLoaded', () => {
             status: document.getElementById('status').value,
             type: document.getElementById('projectType') ? document.getElementById('projectType').value : 'Commercial'
         };
+
+        if (projectData.startDate && projectData.endDate && projectData.endDate < projectData.startDate) {
+            showToast('Validation Error', 'Project end date cannot be earlier than start date.', 'error');
+            setSubmitting('project', false);
+            return;
+        }
         try {
             if (id) {
                 await api.put(`/projects/${id}`, projectData);
@@ -2682,11 +2688,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function openNewUserModal() {
+    async function openNewUserModal() {
         clearFormErrors();
         userForm.reset();
         document.getElementById('user-id').value = '';
         document.getElementById('user-modal-title').textContent = 'Add Team Member';
+
+        const pwdField = document.getElementById('userPassword');
+        if (pwdField) pwdField.value = '';
+
+        const projSelect = document.getElementById('userProjectAssignment');
+        if (projSelect) {
+            projSelect.innerHTML = '<option value="">-- None / General Directory --</option>';
+            try {
+                const projs = await api.get('/projects');
+                if (Array.isArray(projs)) {
+                    projs.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = p.name;
+                        projSelect.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load project list for user assignment:', err);
+            }
+        }
+
         userModal.classList.remove('hidden');
     }
 
@@ -2734,11 +2762,15 @@ document.addEventListener('DOMContentLoaded', () => {
             initials = parts[0].substring(0, 2).toUpperCase();
         }
 
+        const passwordInput = document.getElementById('userPassword')?.value?.trim();
+        const initialPassword = passwordInput || 'demo';
+
         const userData = {
             name: name,
             email: document.getElementById('userEmail').value,
             phone: document.getElementById('userPhone').value || null,
             role: document.getElementById('userRole').value,
+            passwordHash: initialPassword,
             avatarInitials: initials || 'XX',
             active: true
         };
@@ -2748,8 +2780,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 await api.put(`/users/${id}`, userData);
                 showToast('Success', 'Team member updated', 'success');
             } else {
-                await api.post('/users', userData);
-                showToast('Success', 'Team member added', 'success');
+                const newUser = await api.post('/users', userData);
+                const assignedProjId = document.getElementById('userProjectAssignment')?.value;
+                if (assignedProjId && newUser?.id) {
+                    try {
+                        await api.post(`/projects/${assignedProjId}/assignments/${newUser.id}`);
+                    } catch (assignErr) {
+                        console.error('Failed to link project assignment:', assignErr);
+                    }
+                }
+                showToast('Account Created', `Member added! Initial password: ${initialPassword}`, 'success');
             }
             closeUserModal();
             loadTeam();
@@ -3405,9 +3445,9 @@ document.addEventListener('DOMContentLoaded', () => {
         assignPmProjectId.value = projectId;
         try {
             const users = await api.get('/users');
-            // Filter to pm or site_engineer
-            const staff = users.filter(u => u.role.toLowerCase() === 'pm' || u.role.toLowerCase() === 'site_engineer');
-            assignPmUserId.innerHTML = '<option value="">-- Select Staff --</option>';
+            // Allow assigning any non-admin user (PM, Site Engineer, Client, Subcontractor, Finance, etc.)
+            const staff = users.filter(u => u.role.toLowerCase() !== 'admin');
+            assignPmUserId.innerHTML = '<option value="">-- Select Member / Client / Staff --</option>';
             staff.forEach(u => {
                 const opt = document.createElement('option');
                 opt.value = u.id;
@@ -3641,6 +3681,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 isMilestone: document.getElementById('task-is-milestone').checked,
                 isCritical: document.getElementById('task-is-critical').checked
             };
+
+            if (payload.startDate && payload.endDate && payload.endDate < payload.startDate) {
+                showToast('Validation Error', 'Task end date cannot be earlier than start date.', 'error');
+                return;
+            }
+            if (payload.percentComplete < 0 || payload.percentComplete > 100) {
+                showToast('Validation Error', 'Task completion percentage must be between 0% and 100%.', 'error');
+                return;
+            }
 
             try {
                 if (id) {
@@ -4638,6 +4687,87 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Error', 'Failed to delete submittal: ' + err.message, 'error');
         }
     };
+
+    // ── Dynamic Min Date Listeners ──
+    const pStartInput = document.getElementById('startDate');
+    const pEndInput = document.getElementById('endDate');
+    if (pStartInput && pEndInput) {
+        pStartInput.addEventListener('change', () => {
+            if (pStartInput.value) {
+                pEndInput.min = pStartInput.value;
+            } else {
+                pEndInput.removeAttribute('min');
+            }
+        });
+    }
+
+    const tStartInput = document.getElementById('task-start-date');
+    const tEndInput = document.getElementById('task-end-date');
+    if (tStartInput && tEndInput) {
+        tStartInput.addEventListener('change', () => {
+            if (tStartInput.value) {
+                tEndInput.min = tStartInput.value;
+            } else {
+                tEndInput.removeAttribute('min');
+            }
+        });
+    }
+
+    // ── Change Password Modal ──
+    const changePasswordModal = document.getElementById('change-password-modal');
+    const btnChangePasswordTrigger = document.getElementById('btn-change-password-trigger');
+    const btnCloseChangePassword = document.getElementById('btn-close-change-password');
+    const btnCancelChangePassword = document.getElementById('btn-cancel-change-password');
+    const changePasswordForm = document.getElementById('change-password-form');
+
+    if (btnChangePasswordTrigger) {
+        btnChangePasswordTrigger.addEventListener('click', () => {
+            if (!currentUser) {
+                showToast('Authentication', 'Please log in first', 'warning');
+                return;
+            }
+            if (changePasswordForm) changePasswordForm.reset();
+            changePasswordModal?.classList.remove('hidden');
+        });
+    }
+
+    if (btnCloseChangePassword) {
+        btnCloseChangePassword.addEventListener('click', () => changePasswordModal?.classList.add('hidden'));
+    }
+    if (btnCancelChangePassword) {
+        btnCancelChangePassword.addEventListener('click', () => changePasswordModal?.classList.add('hidden'));
+    }
+
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const oldPassword = document.getElementById('cp-old-password')?.value;
+            const newPassword = document.getElementById('cp-new-password')?.value;
+            const confirmPassword = document.getElementById('cp-confirm-password')?.value;
+
+            if (!oldPassword || !newPassword) {
+                showToast('Validation Error', 'All fields are required', 'error');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showToast('Validation Error', 'New passwords do not match', 'error');
+                return;
+            }
+            if (newPassword.length < 3) {
+                showToast('Validation Error', 'Password must be at least 3 characters', 'error');
+                return;
+            }
+
+            try {
+                await api.post('/auth/change-password', { oldPassword, newPassword });
+                showToast('Success', 'Password changed successfully', 'success');
+                changePasswordModal?.classList.add('hidden');
+                changePasswordForm.reset();
+            } catch (err) {
+                showToast('Error', err.message || 'Failed to change password', 'error');
+            }
+        });
+    }
 
 });
 

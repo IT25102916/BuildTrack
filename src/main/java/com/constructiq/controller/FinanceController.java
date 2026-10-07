@@ -41,6 +41,9 @@ public class FinanceController {
 
     @PostMapping("/invoices")
     public Invoice createInvoice(@RequestBody Invoice invoice) {
+        if (invoice.getAmount() == null || invoice.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invoice amount must be greater than zero.");
+        }
         return invoiceRepository.save(invoice);
     }
 
@@ -50,7 +53,12 @@ public class FinanceController {
             if (updates.getProjectId() != null) inv.setProjectId(updates.getProjectId());
             if (updates.getSupplierId() != null) inv.setSupplierId(updates.getSupplierId());
             if (updates.getInvoiceNumber() != null) inv.setInvoiceNumber(updates.getInvoiceNumber());
-            if (updates.getAmount() != null) inv.setAmount(updates.getAmount());
+            if (updates.getAmount() != null) {
+                if (updates.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("Invoice amount must be greater than zero.");
+                }
+                inv.setAmount(updates.getAmount());
+            }
             if (updates.getDueDate() != null) inv.setDueDate(updates.getDueDate());
             if (updates.getStatus() != null) inv.setStatus(updates.getStatus());
             return ResponseEntity.ok(invoiceRepository.save(inv));
@@ -61,7 +69,20 @@ public class FinanceController {
     public ResponseEntity<Invoice> approveInvoice(@PathVariable Long id) {
         Invoice invoice = invoiceRepository.findById(id).orElseThrow();
         invoice.setStatus("Approved");
-        return ResponseEntity.ok(invoiceRepository.save(invoice));
+        Invoice saved = invoiceRepository.save(invoice);
+
+        // Auto-post into General Ledger transactions
+        Transaction tx = new Transaction();
+        tx.setProjectId(invoice.getProjectId() != null ? invoice.getProjectId() : 1L);
+        tx.setType("Expense");
+        tx.setCategory("Contractor / Supplier Invoice");
+        tx.setAmount(invoice.getAmount() != null ? invoice.getAmount() : java.math.BigDecimal.ZERO);
+        tx.setTransactionDate(java.time.LocalDate.now());
+        tx.setDescription("Settlement for Invoice #" + (invoice.getInvoiceNumber() != null ? invoice.getInvoiceNumber() : id));
+        tx.setReferenceId(id);
+        transactionRepository.save(tx);
+
+        return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/invoices/{id}")

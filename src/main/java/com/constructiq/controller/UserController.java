@@ -38,6 +38,9 @@ public class UserController {
             u.setEmail(updates.getEmail());
             u.setRole(updates.getRole());
             u.setPhone(updates.getPhone());
+            if (updates.getPasswordHash() != null && !updates.getPasswordHash().isBlank()) {
+                u.setPasswordHash(updates.getPasswordHash().trim());
+            }
             return ResponseEntity.ok(userRepository.save(u));
         }).orElse(ResponseEntity.notFound().build());
     }

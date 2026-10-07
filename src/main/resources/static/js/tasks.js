@@ -237,6 +237,16 @@ const TasksModule = {
       if (!name) { showToast('Task name is required', 'warning'); return; }
       
       const pct = parseInt(document.getElementById('task-pct')?.value) || 0;
+      if (pct < 0 || pct > 100) {
+        showToast('Task completion percentage must be between 0% and 100%.', 'warning');
+        return;
+      }
+      const startDate = document.getElementById('task-start')?.value || null;
+      const endDate = document.getElementById('task-end')?.value || null;
+      if (startDate && endDate && endDate < startDate) {
+        showToast('Task end date cannot be earlier than start date.', 'warning');
+        return;
+      }
       let status = 'pending';
       if (pct > 0 && pct < 100) status = 'in_progress';
       if (pct === 100) status = 'completed';
@@ -245,8 +255,8 @@ const TasksModule = {
         await Api.createTask({
           projectId:       pid,
           name:            name,
-          startDate:       document.getElementById('task-start')?.value || null,
-          endDate:         document.getElementById('task-end')?.value || null,
+          startDate:       startDate,
+          endDate:         endDate,
           percentComplete: pct,
           status:          status,
           assignedName:    document.getElementById('task-assigned')?.value.trim() || null

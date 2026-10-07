@@ -31,6 +31,7 @@ public class SupplierController {
 
     @PostMapping
     @Transactional
+    @com.constructiq.security.RequireRole({"procurement", "pm", "admin"})
     public ResponseEntity<?> createSupplier(@RequestBody Supplier s) {
         if (s.getId() != null) {
             if (supplierRepository.existsById(s.getId())) {
@@ -60,6 +61,7 @@ public class SupplierController {
     }
 
     @PutMapping("/{id}")
+    @com.constructiq.security.RequireRole({"procurement", "pm", "admin"})
     public ResponseEntity<Supplier> updateSupplier(@PathVariable Long id, @RequestBody Supplier updates) {
         return supplierRepository.findById(id).map(s -> {
             s.setName(updates.getName());
@@ -75,6 +77,7 @@ public class SupplierController {
     }
 
     @DeleteMapping("/{id}")
+    @com.constructiq.security.RequireRole({"procurement", "pm", "admin"})
     public ResponseEntity<Void> deleteSupplier(@PathVariable Long id) {
         if (!supplierRepository.existsById(id)) return ResponseEntity.notFound().build();
         supplierRepository.deleteById(id);
@@ -88,6 +91,7 @@ public class SupplierController {
 
     @PostMapping("/subcontractors")
     @Transactional
+    @com.constructiq.security.RequireRole({"pm", "admin"})
     public ResponseEntity<?> createSubcontractor(@RequestBody Subcontractor s) {
         if (s.getId() != null) {
             if (subcontractorRepository.existsById(s.getId())) {
@@ -117,6 +121,7 @@ public class SupplierController {
     }
 
     @PutMapping("/subcontractors/{id}")
+    @com.constructiq.security.RequireRole({"pm", "admin"})
     public ResponseEntity<Subcontractor> updateSubcontractor(@PathVariable Long id, @RequestBody Subcontractor updates) {
         return subcontractorRepository.findById(id).map(s -> {
             s.setName(updates.getName());
@@ -132,6 +137,7 @@ public class SupplierController {
     }
 
     @DeleteMapping("/subcontractors/{id}")
+    @com.constructiq.security.RequireRole({"pm", "admin"})
     public ResponseEntity<Void> deleteSubcontractor(@PathVariable Long id) {
         if (!subcontractorRepository.existsById(id)) return ResponseEntity.notFound().build();
         subcontractorRepository.deleteById(id);

@@ -211,6 +211,12 @@ const Dashboard = {
     document.getElementById('save-np-btn')?.addEventListener('click', async () => {
       const name = document.getElementById('np-name')?.value.trim();
       if (!name) { showToast('Project name is required', 'warning'); return; }
+      const startDate = document.getElementById('np-start')?.value || null;
+      const endDate = document.getElementById('np-end')?.value || null;
+      if (startDate && endDate && endDate < startDate) {
+        showToast('Project end date cannot be earlier than start date.', 'warning');
+        return;
+      }
       try {
         const project = await Api.createProject({
           name,
@@ -218,8 +224,8 @@ const Dashboard = {
           status:        'planning',
           address:       document.getElementById('np-address')?.value.trim() || null,
           clientName:    document.getElementById('np-client')?.value.trim() || null,
-          startDate:     document.getElementById('np-start')?.value || null,
-          endDate:       document.getElementById('np-end')?.value || null,
+          startDate,
+          endDate,
           contractValue: parseFloat(document.getElementById('np-value')?.value) || 0,
           approvedBudget: parseFloat(document.getElementById('np-value')?.value) || 0,
         });

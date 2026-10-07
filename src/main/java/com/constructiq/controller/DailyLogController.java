@@ -16,9 +16,28 @@ import com.constructiq.security.RequireRole;
 public class DailyLogController {
 
     @Autowired private DailyLogRepository dailyLogRepository;
+    @Autowired private com.constructiq.repository.UserRepository userRepository;
+    @Autowired private com.constructiq.service.ProjectService projectService;
+
+    private void validateDailyLog(DailyLog log) {
+        if (log.getLogDate() != null && log.getLogDate().isAfter(java.time.LocalDate.now())) {
+            throw new IllegalArgumentException("Daily log date cannot be in the future.");
+        }
+        if (log.getManpowerCount() < 0) {
+            throw new IllegalArgumentException("Manpower count cannot be negative.");
+        }
+    }
 
     @GetMapping
-    public List<DailyLog> getAllLogs() {
+    public List<DailyLog> getAllLogs(jakarta.servlet.http.HttpSession session) {
+        Long userId = (session != null) ? (Long) session.getAttribute("userId") : null;
+        if (userId != null) {
+            com.constructiq.model.User user = userRepository.findById(userId).orElse(null);
+            if (user != null && !"admin".equalsIgnoreCase(user.getRole())) {
+                List<Long> pIds = projectService.getAccessibleProjectIds(userId, user.getRole());
+                return pIds.isEmpty() ? List.of() : dailyLogRepository.findByProjectIdInOrderByLogDateDesc(pIds);
+            }
+        }
         return dailyLogRepository.findAll();
     }
 
@@ -34,11 +53,15 @@ public class DailyLogController {
 
     @PostMapping
     @RequireRole({"site_engineer", "pm", "admin"})
-    public DailyLog create(@RequestBody DailyLog log) { return dailyLogRepository.save(log); }
+    public DailyLog create(@RequestBody DailyLog log) {
+        validateDailyLog(log);
+        return dailyLogRepository.save(log);
+    }
 
     @PutMapping("/{id}")
     @RequireRole({"site_engineer", "pm", "admin"})
     public ResponseEntity<DailyLog> update(@PathVariable Long id, @RequestBody DailyLog updates) {
+        validateDailyLog(updates);
         return dailyLogRepository.findById(id).map(l -> {
             if (updates.getWeather() != null) l.setWeather(updates.getWeather());
             if (updates.getTemperature() != null) l.setTemperature(updates.getTemperature());

@@ -10,4 +10,5 @@ import java.util.List;
 public interface ProjectAssignmentRepository extends JpaRepository<ProjectAssignment, Long> {
     List<ProjectAssignment> findByProjectId(Long projectId);
     List<ProjectAssignment> findByUserId(Long userId);
+    void deleteByProjectId(Long projectId);
 }

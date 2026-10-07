@@ -17,10 +17,12 @@ import com.constructiq.security.RequireRole;
 public class AttendanceController {
 
     private final AttendanceRepository attendanceRepository;
+    private final com.constructiq.repository.UserRepository userRepository;
 
     @Autowired
-    public AttendanceController(AttendanceRepository attendanceRepository) {
+    public AttendanceController(AttendanceRepository attendanceRepository, com.constructiq.repository.UserRepository userRepository) {
         this.attendanceRepository = attendanceRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/date/{date}")
@@ -29,10 +31,13 @@ public class AttendanceController {
     }
 
     @PostMapping("/clock-in")
-    @RequireRole({"admin", "pm", "project manager", "site_engineer", "site engineer", "procurement", "inventory_manager", "inventory"})
-    public ResponseEntity<Attendance> clockIn(@RequestBody Attendance attendance) {
-        Long userId = (attendance.getUser() != null) ? attendance.getUser().getId() : null;
+    @RequireRole({"admin", "pm", "site_engineer", "procurement", "inventory_manager", "subcontractor"})
+    public ResponseEntity<Attendance> clockIn(@RequestBody Attendance attendance, jakarta.servlet.http.HttpSession session) {
+        Long sessionUserId = (session != null) ? (Long) session.getAttribute("userId") : null;
+        Long userId = sessionUserId != null ? sessionUserId : ((attendance.getUser() != null) ? attendance.getUser().getId() : null);
+
         if (userId != null) {
+            userRepository.findById(userId).ifPresent(attendance::setUser);
             java.util.Optional<Attendance> existing = attendanceRepository.findByUserIdAndWorkDate(userId, LocalDate.now());
             if (existing.isPresent()) {
                 return ResponseEntity.ok(existing.get());
@@ -45,7 +50,7 @@ public class AttendanceController {
     }
 
     @PutMapping("/{id}/clock-out")
-    @RequireRole({"admin", "pm", "project manager", "site_engineer", "site engineer", "procurement", "inventory_manager", "inventory"})
+    @RequireRole({"admin", "pm", "site_engineer", "procurement", "inventory_manager", "subcontractor"})
     public ResponseEntity<Attendance> clockOut(@PathVariable Long id) {
         return attendanceRepository.findById(id).map(a -> {
             a.setClockOut(LocalDateTime.now());

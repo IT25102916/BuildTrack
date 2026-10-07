@@ -21,6 +21,7 @@ public class ProcurementController {
     @Autowired private MaterialRequestRepository materialRequestRepository;
     @Autowired private PurchaseOrderRepository purchaseOrderRepository;
     @Autowired private QuotationRepository quotationRepository;
+    @Autowired private com.constructiq.repository.SupplierRepository supplierRepository;
 
     // ── Material Requests ─────────────────────────────────
 
@@ -65,7 +66,12 @@ public class ProcurementController {
 
     @PostMapping("/purchase-orders")
     @RequireRole({"procurement", "inventory_manager", "admin"})
-    public PurchaseOrder createPO(@RequestBody PurchaseOrder po) { return purchaseOrderRepository.save(po); }
+    public PurchaseOrder createPO(@RequestBody PurchaseOrder po) {
+        if (po.getAmount() == null || po.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Purchase order amount must be greater than zero.");
+        }
+        return purchaseOrderRepository.save(po);
+    }
 
     @PutMapping("/purchase-orders/{id}")
     @RequireRole({"procurement", "inventory_manager", "admin"})
@@ -73,7 +79,12 @@ public class ProcurementController {
         return purchaseOrderRepository.findById(id).map(po -> {
             po.setStatus(updates.getStatus());
             po.setDescription(updates.getDescription());
-            po.setAmount(updates.getAmount());
+            if (updates.getAmount() != null) {
+                if (updates.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("Purchase order amount must be greater than zero.");
+                }
+                po.setAmount(updates.getAmount());
+            }
             return ResponseEntity.ok(purchaseOrderRepository.save(po));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -114,6 +125,24 @@ public class ProcurementController {
                     quotationRepository.save(quote);
                 }
             }
+
+            // Auto-create Purchase Order from accepted quotation
+            PurchaseOrder po = new PurchaseOrder();
+            po.setMaterialRequestId(acceptedQuote.getMaterialRequestId());
+            po.setSupplierId(acceptedQuote.getSupplierId());
+            if (acceptedQuote.getSupplierId() != null) {
+                supplierRepository.findById(acceptedQuote.getSupplierId())
+                    .ifPresent(s -> po.setSupplierName(s.getName()));
+            }
+            po.setDescription("PO auto-generated from Accepted Quotation #" + id);
+            po.setAmount(acceptedQuote.getPrice() != null ? acceptedQuote.getPrice() : java.math.BigDecimal.ZERO);
+            po.setStatus("ordered");
+            po.setOrderDate(java.time.LocalDate.now());
+            materialRequestRepository.findById(acceptedQuote.getMaterialRequestId())
+                .ifPresent(mr -> po.setProjectId(mr.getProjectId()));
+            if (po.getProjectId() == null) po.setProjectId(1L);
+            purchaseOrderRepository.save(po);
+
             return ResponseEntity.ok(savedQuote);
         }).orElse(ResponseEntity.notFound().build());
     }

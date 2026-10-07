@@ -49,6 +49,31 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> body, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "Not logged in."));
+
+        String oldPassword = body.getOrDefault("oldPassword", "").trim();
+        String newPassword = body.getOrDefault("newPassword", "").trim();
+
+        if (newPassword.length() < 3) {
+            return ResponseEntity.badRequest().body(Map.of("error", "New password must be at least 3 characters."));
+        }
+
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found."));
+
+        User user = userOpt.get();
+        if (!user.getPasswordHash().equals(oldPassword)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Current password does not match."));
+        }
+
+        user.setPasswordHash(newPassword);
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
+    }
+
     /** Return user without the password hash */
     private Map<String, Object> sanitize(User u) {
         return Map.of(

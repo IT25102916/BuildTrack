@@ -22,11 +22,13 @@ public class DocumentController {
     }
 
     @PostMapping
+    @com.constructiq.security.RequireRole({"pm", "site_engineer", "admin", "client"})
     public Document uploadDocument(@RequestBody Document document) {
         return documentRepository.save(document);
     }
 
     @DeleteMapping("/{id}")
+    @com.constructiq.security.RequireRole({"pm", "admin"})
     public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {
         if (!documentRepository.existsById(id)) return ResponseEntity.notFound().build();
         documentRepository.deleteById(id);

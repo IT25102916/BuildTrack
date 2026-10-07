@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface RfiRepository extends JpaRepository<Rfi, Long> {
     List<Rfi> findByProjectId(Long projectId);
+    List<Rfi> findByProjectIdIn(List<Long> projectIds);
+    void deleteByProjectId(Long projectId);
 }

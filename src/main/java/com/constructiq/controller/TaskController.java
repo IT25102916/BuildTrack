@@ -15,9 +15,30 @@ import com.constructiq.security.RequireRole;
 public class TaskController {
 
     @Autowired private TaskRepository taskRepository;
+    @Autowired private com.constructiq.repository.UserRepository userRepository;
+    @Autowired private com.constructiq.service.ProjectService projectService;
+
+    private void validateTask(Task task) {
+        if (task.getEndDate() != null && task.getStartDate() != null && task.getEndDate().isBefore(task.getStartDate())) {
+            throw new IllegalArgumentException("Task end date cannot be earlier than start date.");
+        }
+        if (task.getPercentComplete() < 0 || task.getPercentComplete() > 100) {
+            throw new IllegalArgumentException("Task completion percentage must be between 0 and 100.");
+        }
+    }
 
     @GetMapping
-    public List<Task> getAll() { return taskRepository.findAll(); }
+    public List<Task> getAll(jakarta.servlet.http.HttpSession session) {
+        Long userId = (session != null) ? (Long) session.getAttribute("userId") : null;
+        if (userId != null) {
+            com.constructiq.model.User user = userRepository.findById(userId).orElse(null);
+            if (user != null && !"admin".equalsIgnoreCase(user.getRole())) {
+                List<Long> pIds = projectService.getAccessibleProjectIds(userId, user.getRole());
+                return pIds.isEmpty() ? List.of() : taskRepository.findByProjectIdIn(pIds);
+            }
+        }
+        return taskRepository.findAll();
+    }
 
     @GetMapping("/project/{projectId}")
     public List<Task> getByProject(@PathVariable Long projectId) {
@@ -31,11 +52,15 @@ public class TaskController {
 
     @PostMapping
     @RequireRole({"pm", "admin"})
-    public Task create(@RequestBody Task task) { return taskRepository.save(task); }
+    public Task create(@RequestBody Task task) {
+        validateTask(task);
+        return taskRepository.save(task);
+    }
 
     @PutMapping("/{id}")
     @RequireRole({"pm", "admin"})
     public ResponseEntity<Task> update(@PathVariable Long id, @RequestBody Task updates) {
+        validateTask(updates);
         return taskRepository.findById(id).map(t -> {
             t.setName(updates.getName());
             t.setStatus(updates.getStatus());
