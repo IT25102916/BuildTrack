@@ -11,7 +11,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/users")
-@SuppressWarnings("null")
 public class UserController {
 
     @Autowired private UserRepository userRepository;

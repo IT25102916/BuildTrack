@@ -12,7 +12,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/daily-logs")
-@SuppressWarnings("null")
 public class DailyLogController {
 
     @Autowired private DailyLogRepository dailyLogRepository;

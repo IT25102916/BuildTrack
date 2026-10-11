@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
-@SuppressWarnings("null")
 public class NotificationController {
 
     @Autowired private NotificationRepository notificationRepository;

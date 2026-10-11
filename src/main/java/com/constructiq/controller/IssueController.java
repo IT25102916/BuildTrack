@@ -11,7 +11,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/issues")
-@SuppressWarnings("null")
 public class IssueController {
 
     @Autowired

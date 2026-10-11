@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/messages")
-@SuppressWarnings("null")
 public class MessageController {
 
     @Autowired

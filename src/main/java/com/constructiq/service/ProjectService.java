@@ -2,7 +2,6 @@ package com.constructiq.service;
 
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.model.Project;
-import com.constructiq.model.ProjectAssignment;
 import com.constructiq.repository.ProjectAssignmentRepository;
 import com.constructiq.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +11,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
 public class ProjectService {
 
     private final ProjectRepository projectRepository;

@@ -13,7 +13,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/budget")
-@SuppressWarnings("null")
 public class BudgetController {
 
     @Autowired private BudgetLineRepository budgetLineRepository;

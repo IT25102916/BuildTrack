@@ -15,7 +15,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/procurement")
-@SuppressWarnings("null")
 public class ProcurementController {
 
     @Autowired private MaterialRequestRepository materialRequestRepository;

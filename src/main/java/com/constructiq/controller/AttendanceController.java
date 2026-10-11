@@ -13,7 +13,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/attendance")
-@SuppressWarnings("null")
 public class AttendanceController {
 
     private final AttendanceRepository attendanceRepository;

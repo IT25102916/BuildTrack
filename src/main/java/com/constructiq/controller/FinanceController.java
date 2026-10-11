@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/finance")
 @RequireRole({"finance", "admin"})
-@SuppressWarnings("null")
 public class FinanceController {
 
     @Autowired

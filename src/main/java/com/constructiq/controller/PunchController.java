@@ -12,7 +12,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/punch")
-@SuppressWarnings("null")
 public class PunchController {
 
     @Autowired private PunchItemRepository punchItemRepository;

@@ -11,7 +11,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/safety")
-@SuppressWarnings("null")
 public class SafetyController {
 
     @Autowired private IncidentRepository incidentRepository;

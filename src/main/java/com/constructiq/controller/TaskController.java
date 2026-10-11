@@ -11,7 +11,6 @@ import com.constructiq.security.RequireRole;
 
 @RestController
 @RequestMapping("/api/tasks")
-@SuppressWarnings("null")
 public class TaskController {
 
     @Autowired private TaskRepository taskRepository;

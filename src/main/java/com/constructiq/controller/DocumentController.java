@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/documents")
-@SuppressWarnings("null")
 public class DocumentController {
 
     @Autowired

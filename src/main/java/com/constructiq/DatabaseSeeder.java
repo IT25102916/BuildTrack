@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Component
-@SuppressWarnings("null")
 public class DatabaseSeeder implements CommandLineRunner {
 
     @Autowired private UserRepository userRepository;
@@ -46,7 +45,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
 
         // Ensure 8 standard user accounts exist with password 'demo'
-        User admin = seedUser("Alexander Vance", "admin@constructiq.com", "admin", "AV", "+1 (555) 010-1001");
+        seedUser("Alexander Vance", "admin@constructiq.com", "admin", "AV", "+1 (555) 010-1001");
         User pm = seedUser("Marcus Brody", "pm@constructiq.com", "pm", "MB", "+1 (555) 010-1002");
         User siteEng = seedUser("Elena Rostova", "site_eng@constructiq.com", "site_engineer", "ER", "+1 (555) 010-1003");
         seedUser("Sarah Jenkins", "finance@constructiq.com", "finance", "SJ", "+1 (555) 010-1004");

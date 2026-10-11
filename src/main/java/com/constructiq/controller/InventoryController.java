@@ -11,24 +11,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.constructiq.security.RequireRole;
-import com.constructiq.repository.ProjectRepository;
-import com.constructiq.model.Project;
-import jakarta.servlet.http.HttpSession;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/inventory")
-@SuppressWarnings("null")
 public class InventoryController {
 
     @Autowired private InventoryItemRepository itemRepo;
     @Autowired private InventoryTransactionRepository txRepo;
     @Autowired private SupplierRepository supplierRepo;
-    @Autowired private ProjectRepository projectRepo;
 
     // ── Items ──────────────────────────────────────────────────────────────
 
